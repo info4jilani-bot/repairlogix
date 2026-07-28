@@ -545,7 +545,16 @@
 
     document.getElementById('intakeForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const signatureBase64 = sigCanvas.toDataURL('image/png');
+        
+        // Create a temporary canvas with a white background to ensure signature is visible
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = sigCanvas.width;
+        tempCanvas.height = sigCanvas.height;
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCtx.fillStyle = "#ffffff";
+        tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+        tempCtx.drawImage(sigCanvas, 0, 0);
+        const signatureBase64 = tempCanvas.toDataURL('image/png');
         
         try {
             const res = await fetch('/api/orders', {
@@ -579,6 +588,7 @@
             alert("Network error submitting order: " + err.message);
         }
     });
+                                                         
 
     function openModal(id) { 
         document.getElementById(id).classList.remove('hidden'); 
