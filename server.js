@@ -143,9 +143,15 @@ app.patch('/api/orders/:id/driver-image', (req, res) => {
 });
 
 // Get all orders
+// Get all orders
 app.get('/api/orders', (req, res) => {
-  const orders = db.prepare('SELECT * FROM orders ORDER BY created_at DESC').all();
-  res.json(orders);
+  try {
+    const orders = db.prepare('SELECT * FROM orders ORDER BY created_at DESC').all();
+    res.json(orders);
+  } catch (err) {
+    console.error("Database read error:", err.message);
+    res.status(500).json({ error: "Database error: " + err.message });
+  }
 });
 
 // Create new order
