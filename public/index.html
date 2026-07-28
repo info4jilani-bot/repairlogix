@@ -8,7 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root { --bg-primary: #08090a; --bg-card: #121316; --accent-gold: #d4af37; --border-subtle: rgba(255, 255, 255, 0.05); }
-        * { -webkit-font-smoothing: antialiased; }
+        * { -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
         body { font-family: 'Inter', sans-serif; background-color: var(--bg-primary); color: #f5f5f7; background-image: radial-gradient(circle at 15% 20%, rgba(212, 175, 55, 0.05) 0%, transparent 40%); overflow-x: hidden; }
         h1, h2, h3, h4 { font-family: 'Space Grotesk', sans-serif; letter-spacing: -0.02em; }
         .glass { background: rgba(18, 19, 22, 0.6); backdrop-filter: blur(24px); border: 1px solid var(--border-subtle); }
@@ -17,7 +17,7 @@
         .btn-ghost { border: 1px solid rgba(255,255,255,0.1); color: #a1a1aa; }
         .role-btn { transition: all 0.3s ease; border: 1px solid transparent; }
         .role-btn.active { background: rgba(212, 175, 55, 0.1); border-color: rgba(212, 175, 55, 0.3); color: #d4af37; }
-        #sigCanvas { background: #fff; border-radius: 12px; cursor: crosshair; width: 100%; height: 150px; }
+        #sigCanvas { background: #fff; border-radius: 12px; cursor: crosshair; width: 100%; height: 150px; touch-action: none; }
         select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23d4af37'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1.25em; padding-right: 2.5rem; }
         .step-active { background-color: var(--accent-gold); color: #000; border-color: var(--accent-gold) !important; }
         .step-completed { background-color: rgba(212, 175, 55, 0.2); color: var(--accent-gold); border-color: rgba(212, 175, 55, 0.3) !important; }
@@ -27,7 +27,16 @@
 </head>
 <body class="flex">
 
-<aside class="w-64 bg-black/20 backdrop-blur-xl border-r border-white/5 flex flex-col fixed h-full z-20">
+<!-- Mobile Hamburger Menu Button -->
+<button onclick="toggleSidebar()" class="md:hidden fixed top-4 left-4 z-50 glass p-2 rounded-xl text-white">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+</button>
+
+<!-- Mobile Overlay -->
+<div id="sidebarOverlay" onclick="toggleSidebar()" class="md:hidden fixed inset-0 bg-black/50 z-30 hidden"></div>
+
+<!-- Sidebar -->
+<aside id="sidebar" class="w-64 bg-black/20 backdrop-blur-xl border-r border-white/5 flex flex-col fixed h-full z-40 transition-transform duration-300 -translate-x-full md:translate-x-0">
     <div class="p-6 border-b border-white/5">
         <div class="flex items-center gap-3">
             <div class="w-9 h-9 bg-gradient-to-br from-[#d4af37] to-[#8a7028] rounded-lg flex items-center justify-center shadow-lg rotate-45">
@@ -39,7 +48,7 @@
             </div>
         </div>
     </div>
-    <div class="p-4 flex-1">
+    <div class="p-4 flex-1 overflow-y-auto">
         <p class="text-[10px] uppercase tracking-widest text-gray-600 mb-3 px-2">Switch Role View</p>
         <nav class="space-y-1">
             <button onclick="switchRole('owner')" id="btn-owner" class="role-btn w-full text-left px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white flex items-center gap-3">Company Owner</button>
@@ -50,33 +59,34 @@
     </div>
 </aside>
 
-<main class="flex-1 ml-64 p-10 w-[calc(100%-16rem)]">
+<!-- Main Content -->
+<main class="flex-1 md:ml-64 p-4 md:p-10 w-full pt-20 md:pt-10">
     <div id="view-container">Loading...</div>
 </main>
 
 <!-- Cashier Intake Modal -->
 <div id="intakeModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden items-center justify-center p-4">
-    <div class="glass rounded-3xl w-full max-w-2xl p-8 relative max-h-[90vh] flex flex-col">
+    <div class="glass rounded-3xl w-full max-w-2xl p-4 md:p-8 relative max-h-[95vh] flex flex-col">
         <div class="flex justify-between items-center mb-6">
-            <h3 class="text-2xl font-bold">New Device Intake</h3>
+            <h3 class="text-xl md:text-2xl font-bold">New Device Intake</h3>
             <button onclick="closeModal('intakeModal')" class="text-gray-500 hover:text-white text-2xl">&times;</button>
         </div>
-        <div class="flex items-center justify-center gap-4 mb-6">
-            <div class="flex items-center gap-2"><div id="step-dot-1" class="step-active w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-sm font-semibold">1</div><span class="text-sm font-medium text-white">Details & Estimate</span></div>
-            <div class="w-8 h-px bg-white/10"></div>
-            <div class="flex items-center gap-2"><div id="step-dot-2" class="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-sm font-semibold text-gray-500">2</div><span id="step-text-2" class="text-sm font-medium text-gray-500">Diagnostic Video</span></div>
-            <div class="w-8 h-px bg-white/10"></div>
-            <div class="flex items-center gap-2"><div id="step-dot-3" class="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-sm font-semibold text-gray-500">3</div><span id="step-text-3" class="text-sm font-medium text-gray-500">Signature</span></div>
+        <div class="flex items-center justify-center gap-2 md:gap-4 mb-6 text-xs md:text-sm">
+            <div class="flex items-center gap-1 md:gap-2"><div id="step-dot-1" class="step-active w-6 h-6 md:w-8 md:h-8 rounded-full border border-white/10 flex items-center justify-center text-xs md:text-sm font-semibold">1</div><span class="hidden sm:inline font-medium text-white">Details</span></div>
+            <div class="w-4 md:w-8 h-px bg-white/10"></div>
+            <div class="flex items-center gap-1 md:gap-2"><div id="step-dot-2" class="w-6 h-6 md:w-8 md:h-8 rounded-full border border-white/10 flex items-center justify-center text-xs md:text-sm font-semibold text-gray-500">2</div><span class="hidden sm:inline font-medium text-gray-500">Diagnostic</span></div>
+            <div class="w-4 md:w-8 h-px bg-white/10"></div>
+            <div class="flex items-center gap-1 md:gap-2"><div id="step-dot-3" class="w-6 h-6 md:w-8 md:h-8 rounded-full border border-white/10 flex items-center justify-center text-xs md:text-sm font-semibold text-gray-500">3</div><span class="hidden sm:inline font-medium text-gray-500">Signature</span></div>
         </div>
-        <form id="intakeForm" class="space-y-5 overflow-y-auto flex-1">
+        <form id="intakeForm" class="space-y-5 overflow-y-auto flex-1 pr-2">
             <div id="wizard-step-1" class="space-y-4">
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div><label class="block text-xs uppercase tracking-wider text-gray-500 mb-2">Customer Name</label><input type="text" id="m_customerName" required class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#d4af37]"></div>
                     <div><label class="block text-xs uppercase tracking-wider text-gray-500 mb-2">Phone</label><input type="tel" id="m_customerPhone" required class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#d4af37]"></div>
                 </div>
                 <div class="bg-black/30 border border-[#d4af37]/20 rounded-xl p-4 space-y-4">
                     <h4 class="text-xs uppercase tracking-wider text-[#d4af37]">Itemized Estimate Engine</h4>
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs uppercase tracking-wider text-gray-500 mb-2">Device Model</label>
                             <select id="m_deviceModel" onchange="updateEstimate()" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#d4af37]">
@@ -112,18 +122,12 @@
             </div>
             <div id="wizard-step-2" class="hidden space-y-4">
                 <p class="text-gray-400 text-sm">Record a video demonstrating the device's condition (screen, touch, cameras, ports) to protect against future disputes.</p>
-                <div class="grid grid-cols-2 gap-4 text-xs text-gray-400 bg-black/20 p-4 rounded-xl border border-white/5">
-                    <div class="flex items-center gap-2"><input type="checkbox" checked class="rounded bg-black border-white/10 text-[#d4af37] focus:ring-[#d4af37]"> Screen Condition (Front/Back)</div>
-                    <div class="flex items-center gap-2"><input type="checkbox" checked class="rounded bg-black border-white/10 text-[#d4af37] focus:ring-[#d4af37]"> Touch Responsiveness</div>
-                    <div class="flex items-center gap-2"><input type="checkbox" checked class="rounded bg-black border-white/10 text-[#d4af37] focus:ring-[#d4af37]"> Front & Back Cameras</div>
-                    <div class="flex items-center gap-2"><input type="checkbox" checked class="rounded bg-black border-white/10 text-[#d4af37] focus:ring-[#d4af37]"> Speakers & Charging Port</div>
-                </div>
                 <div class="bg-black/40 rounded-xl p-4 flex flex-col items-center justify-center space-y-3 border border-white/10">
                     <video id="diagVideoPreview" autoplay muted playsinline class="w-full max-w-md rounded-lg border border-white/10 hidden"></video>
                     <div id="recStatus" class="text-xs text-gray-500">Camera offline</div>
-                    <div class="flex gap-3">
+                    <div class="flex flex-wrap gap-2 justify-center">
                         <button type="button" id="btnStartCam" onclick="startCamera('intake')" class="bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-lg text-xs border border-white/10">Start Camera</button>
-                        <button type="button" id="btnRec" onclick="startRecording()" class="bg-red-600/80 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-xs hidden flex items-center gap-2">
+                        <button type="button" id="btnRec" onclick="startRecording()" class="bg-red-600/80 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-xs hidden items-center gap-2">
                             <span class="w-2 h-2 bg-white rounded-full rec-dot"></span> Record
                         </button>
                         <button type="button" id="btnStop" onclick="stopRecording()" class="bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded-lg text-xs hidden">Stop & Save</button>
@@ -131,12 +135,12 @@
                 </div>
                 <div class="flex gap-3 pt-2">
                     <button type="button" onclick="nextStep(1)" class="btn-ghost flex-1 py-3 rounded-xl text-sm">Back</button>
-                    <button type="button" onclick="nextStep(3)" class="btn-gold flex-1 py-3 rounded-xl text-sm">Continue to Signature →</button>
+                    <button type="button" onclick="nextStep(3)" class="btn-gold flex-1 py-3 rounded-xl text-sm">Continue →</button>
                 </div>
             </div>
             <div id="wizard-step-3" class="hidden space-y-4">
                 <div class="bg-black/30 border border-white/10 rounded-xl p-4 flex justify-between items-center">
-                    <span class="text-sm text-gray-400">Final Estimate Approval:</span>
+                    <span class="text-sm text-gray-400">Final Estimate:</span>
                     <span class="text-2xl font-bold text-[#d4af37]">$<span id="finalPriceDisplay">379</span></span>
                 </div>
                 <div>
@@ -146,7 +150,7 @@
                 </div>
                 <div class="flex gap-3 pt-2">
                     <button type="button" onclick="nextStep(2)" class="btn-ghost flex-1 py-3 rounded-xl text-sm">Back</button>
-                    <button type="submit" class="btn-gold flex-1 py-3 rounded-xl text-sm">Push to Driver Dispatch</button>
+                    <button type="submit" class="btn-gold flex-1 py-3 rounded-xl text-sm">Push to Dispatch</button>
                 </div>
             </div>
         </form>
@@ -155,10 +159,10 @@
 
 <!-- Technician Video Modal -->
 <div id="techVideoModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden items-center justify-center p-4">
-    <div class="glass rounded-3xl w-full max-w-2xl p-8 relative max-h-[90vh] flex flex-col">
+    <div class="glass rounded-3xl w-full max-w-2xl p-4 md:p-8 relative max-h-[95vh] flex flex-col">
         <div class="flex justify-between items-center mb-6">
             <div>
-                <h3 class="text-2xl font-bold" id="techVideoTitle">Tech Video Recorder</h3>
+                <h3 class="text-xl md:text-2xl font-bold" id="techVideoTitle">Tech Video Recorder</h3>
                 <p class="text-gray-500 text-sm" id="techVideoSubtitle">Order: ...</p>
             </div>
             <button onclick="closeModal('techVideoModal')" class="text-gray-500 hover:text-white text-2xl">&times;</button>
@@ -166,10 +170,9 @@
         <div class="bg-black/40 rounded-xl p-4 flex flex-col items-center justify-center space-y-3 border border-white/10 flex-1">
             <video id="techVideoPreview" autoplay muted playsinline class="w-full max-w-md rounded-lg border border-white/10 hidden"></video>
             <div id="techRecStatus" class="text-xs text-gray-500">Camera offline</div>
-            <div class="flex gap-3">
-                                <button type="button" id="btnTechStartCam" onclick="startCamera('tech', activeTechOrderId, activeTechType)" class="bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-lg text-xs border border-white/10">Start Camera</button>
-                
-                <button type="button" id="btnTechRec" onclick="startRecording()" class="bg-red-600/80 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-xs hidden flex items-center gap-2">
+            <div class="flex flex-wrap gap-2 justify-center">
+                <button type="button" id="btnTechStartCam" onclick="startCamera('tech', activeTechOrderId, activeTechType)" class="bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-lg text-xs border border-white/10">Start Camera</button>
+                <button type="button" id="btnTechRec" onclick="startRecording()" class="bg-red-600/80 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-xs hidden items-center gap-2">
                     <span class="w-2 h-2 bg-white rounded-full rec-dot"></span> Record
                 </button>
                 <button type="button" id="btnTechStop" onclick="stopRecording()" class="bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded-lg text-xs hidden">Stop & Save</button>
@@ -180,11 +183,11 @@
 
 <!-- Driver Photo Modal -->
 <div id="driverPhotoModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden items-center justify-center p-4">
-    <div class="glass rounded-3xl w-full max-w-2xl p-8 relative max-h-[90vh] flex flex-col">
+    <div class="glass rounded-3xl w-full max-w-2xl p-4 md:p-8 relative max-h-[95vh] flex flex-col">
         <div class="flex justify-between items-center mb-6">
             <div>
-                <h3 class="text-2xl font-bold">Driver Photo Capture</h3>
-                <p class="text-gray-500 text-sm" id="photoSubtitle">Take a picture of the device condition</p>
+                <h3 class="text-xl md:text-2xl font-bold">Driver Photo Capture</h3>
+                <p class="text-gray-500 text-sm" id="photoSubtitle">Take a picture of the device</p>
             </div>
             <button onclick="closeModal('driverPhotoModal')" class="text-gray-500 hover:text-white text-2xl">&times;</button>
         </div>
@@ -201,15 +204,15 @@
 
 <!-- Evidence Viewer Modal -->
 <div id="evidenceModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden items-center justify-center p-4">
-    <div class="glass rounded-3xl w-full max-w-4xl p-8 relative max-h-[90vh] flex flex-col">
+    <div class="glass rounded-3xl w-full max-w-4xl p-4 md:p-8 relative max-h-[95vh] flex flex-col">
         <div class="flex justify-between items-center mb-6">
             <div>
-                <h3 class="text-2xl font-bold" id="evTitle">Dispute Evidence & Audit Trail</h3>
+                <h3 class="text-xl md:text-2xl font-bold">Dispute Evidence & Audit Trail</h3>
                 <p class="text-gray-500 text-sm" id="evSubtitle">Order: ...</p>
             </div>
             <button onclick="closeModal('evidenceModal')" class="text-gray-500 hover:text-white text-2xl">&times;</button>
         </div>
-        <div id="evContent" class="space-y-6 overflow-y-auto pr-4"></div>
+        <div id="evContent" class="space-y-6 overflow-y-auto pr-2 flex-1"></div>
     </div>
 </div>
 
@@ -222,8 +225,9 @@
     let videoContext = { mode: null, orderId: null, type: null };
     let photoStream = null;
     let photoContext = { orderId: null, type: null };
+    let activeTechOrderId = null;
+    let activeTechType = null;
 
-    // --- PRICING MATRIX ---
     const PRICING_MATRIX = {
         "iPhone 17 Pro Max": { screen: 379, battery: 119, back_glass: 159, rear_cam: 249, full_device: 799 },
         "iPhone 17 Pro": { screen: 349, battery: 119, back_glass: 159, rear_cam: 249, full_device: 749 },
@@ -255,6 +259,13 @@
         "Galaxy S24 FE": { screen: 160, battery: 79, back_glass: 69, rear_cam: 99, full_device: 349 },
         "Galaxy A55": { screen: 129, battery: 69, back_glass: 59, rear_cam: 89, full_device: 199 }
     };
+
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        sidebar.classList.toggle('-translate-x-full');
+        overlay.classList.toggle('hidden');
+    }
 
     function updateEstimate() {
         const model = document.getElementById('m_deviceModel').value;
@@ -296,12 +307,11 @@
         if (step === 3) document.getElementById('finalPriceDisplay').innerText = document.getElementById('m_repairCost').value;
     }
 
-    // --- VIDEO RECORDER LOGIC (Cashier & Tech) ---
     let videoStream;
     async function startCamera(mode, orderId = null, type = null) {
         videoContext = { mode, orderId, type };
         try {
-            videoStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: true });
             const videoEl = mode === 'intake' ? 'diagVideoPreview' : 'techVideoPreview';
             const btnStart = mode === 'intake' ? 'btnStartCam' : 'btnTechStartCam';
             const btnRec = mode === 'intake' ? 'btnRec' : 'btnTechRec';
@@ -311,6 +321,7 @@
             document.getElementById(videoEl).classList.remove('hidden');
             document.getElementById(btnStart).classList.add('hidden');
             document.getElementById(btnRec).classList.remove('hidden');
+            document.getElementById(btnRec).classList.add('flex');
             document.getElementById(statusEl).innerText = "Camera ready. Click Record to begin.";
         } catch (err) {
             alert("Camera access denied or not available. Please ensure you are on HTTPS and allow camera permissions.");
@@ -344,7 +355,7 @@
 
         try {
             const res = await fetch('/api/upload-video', { method: 'POST', body: formData });
-            const data = await res.json().catch(() => ({ success: false, error: "Server returned an invalid response (likely a crash)." }));
+            const data = await res.json().catch(() => ({ success: false, error: "Server returned an invalid response." }));
             
             if (data.success) {
                 const isIntake = videoContext.mode === 'intake';
@@ -360,7 +371,7 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ type: videoContext.type, videoUrl: data.videoUrl })
                     });
-                    document.getElementById('techRecStatus').innerHTML = '<span class="text-emerald-400 font-bold">✓ Video Saved to Order!</span>';
+                    document.getElementById('techRecStatus').innerHTML = '<span class="text-emerald-400 font-bold">✓ Video Saved!</span>';
                     document.getElementById('btnTechRec').classList.add('hidden');
                     document.getElementById('btnTechStartCam').classList.remove('hidden');
                     document.getElementById('techVideoPreview').classList.add('hidden');
@@ -374,7 +385,6 @@
         }
     }
 
-    // --- DRIVER PHOTO LOGIC ---
     async function openPhotoModal(orderId, type) {
         photoContext = { orderId, type };
         const typeMap = {
@@ -432,7 +442,6 @@
         }
     }
 
-    // --- EVIDENCE VIEWER LOGIC ---
     function openEvidenceModal(orderId) {
         const o = orders.find(o => o.id === orderId);
         if (!o) return;
@@ -449,28 +458,25 @@
         const dateStr = new Date(o.created_at).toLocaleString();
 
         const html = `
-            <div class="bg-[#d4af37]/10 border border-[#d4af37]/20 rounded-xl p-4 flex justify-between items-center">
+            <div class="bg-[#d4af37]/10 border border-[#d4af37]/20 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-center gap-2">
                 <div>
                     <p class="text-xs uppercase tracking-wider text-[#d4af37]">Drop-off Timestamp</p>
                     <p class="text-white font-bold">${dateStr}</p>
                 </div>
-                <div>
-                    <p class="text-xs uppercase tracking-wider text-[#d4af37] text-right">Final Repair Cost</p>
-                    <p class="text-white font-bold text-right">$${o.repair_cost}</p>
+                <div class="sm:text-right">
+                    <p class="text-xs uppercase tracking-wider text-[#d4af37]">Final Repair Cost</p>
+                    <p class="text-white font-bold">$${o.repair_cost}</p>
                 </div>
             </div>
-
             <div>
                 <h4 class="text-sm uppercase tracking-wider text-gray-400 mb-3">Customer Signature Approval</h4>
                 ${renderMedia(o.signature_url, 'img')}
             </div>
-
             <div>
                 <h4 class="text-sm uppercase tracking-wider text-gray-400 mb-3">Cashier Pre-Repair Diagnostic Video</h4>
                 ${renderMedia(o.diag_video_url, 'video')}
             </div>
-
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <h4 class="text-sm uppercase tracking-wider text-gray-400 mb-3">Tech: Pre-Repair Video</h4>
                     ${renderMedia(o.tech_pre_repair_video_url, 'video')}
@@ -480,7 +486,6 @@
                     ${renderMedia(o.tech_post_repair_video_url, 'video')}
                 </div>
             </div>
-
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                     <h4 class="text-sm uppercase tracking-wider text-gray-400 mb-3">Driver: Station Pickup</h4>
@@ -505,7 +510,6 @@
         openModal('evidenceModal');
     }
 
-    // --- SIGNATURE PAD LOGIC ---
     window.onload = () => {
         sigCanvas = document.getElementById('sigCanvas');
         sigCtx = sigCanvas.getContext('2d');
@@ -525,7 +529,6 @@
     function draw(e) { if(!drawing) return; sigCtx.lineTo(getPos(e).x, getPos(e).y); sigCtx.stroke(); }
     function clearSig() { sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height); }
 
-    // --- API CALLS ---
     async function fetchOrders() {
         try {
             const res = await fetch('/api/orders');
@@ -545,8 +548,6 @@
 
     document.getElementById('intakeForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        
-        // Create a temporary canvas with a white background to ensure signature is visible
         const tempCanvas = document.createElement('canvas');
         tempCanvas.width = sigCanvas.width;
         tempCanvas.height = sigCanvas.height;
@@ -588,7 +589,6 @@
             alert("Network error submitting order: " + err.message);
         }
     });
-                                                         
 
     function openModal(id) { 
         document.getElementById(id).classList.remove('hidden'); 
@@ -600,8 +600,6 @@
         document.getElementById(id).classList.remove('flex'); 
     }
     
-    let activeTechOrderId = null;
-    let activeTechType = null;
     function openTechVideoModal(orderId, type) {
         activeTechOrderId = orderId;
         activeTechType = type;
@@ -612,7 +610,13 @@
         openModal('techVideoModal');
     }
 
-    function switchRole(role) { currentRole = role; document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active')); document.getElementById(`btn-${role}`).classList.add('active'); renderView(); }
+    function switchRole(role) { 
+        currentRole = role; 
+        document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active')); 
+        document.getElementById(`btn-${role}`).classList.add('active'); 
+        renderView(); 
+        toggleSidebar();
+    }
 
     function renderView() {
         const c = document.getElementById('view-container');
@@ -622,19 +626,19 @@
         else if(currentRole === 'tech') c.innerHTML = renderTech();
     }
 
-    function renderStatCard(label, val, color) { return `<div class="bg-white/5 border border-white/5 p-6 rounded-2xl"><p class="text-xs text-gray-500 uppercase tracking-wider mb-2">${label}</p><h3 class="text-2xl font-bold ${color}">${val}</h3></div>`; }
+    function renderStatCard(label, val, color) { return `<div class="bg-white/5 border border-white/5 p-4 md:p-6 rounded-2xl"><p class="text-xs text-gray-500 uppercase tracking-wider mb-2">${label}</p><h3 class="text-xl md:text-2xl font-bold ${color}">${val}</h3></div>`; }
     
     function renderOwner() {
         const completed = orders.filter(o => o.status === 'COMPLETED');
-        return `<div class="mb-10"><h2 class="text-4xl font-bold mb-2">Company Overview</h2><p class="text-gray-500">Global financial metrics.</p></div>
-        <div class="grid grid-cols-3 gap-4 mb-8">
+        return `<div class="mb-6 md:mb-10"><h2 class="text-3xl md:text-4xl font-bold mb-2">Company Overview</h2><p class="text-gray-500">Global financial metrics.</p></div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
             ${renderStatCard('Total Revenue', `$${completed.reduce((a,b) => a + b.repair_cost, 0)}`, 'text-emerald-400')}
             ${renderStatCard('Business Profit', `$${completed.reduce((a,b) => a + b.business_cut, 0)}`, 'text-[#d4af37]')}
             ${renderStatCard('Active Repairs', orders.filter(o => o.status !== 'COMPLETED').length, 'text-white')}
         </div>
-        <div class="glass rounded-2xl p-6">
+        <div class="glass rounded-2xl p-4 md:p-6 overflow-x-auto">
             <h3 class="text-lg font-bold mb-4">All Orders & Dispute Center</h3>
-            <table class="w-full text-sm">
+            <table class="w-full text-sm min-w-[500px]">
                 <thead class="text-gray-500 uppercase text-xs border-b border-white/5">
                     <tr>
                         <th class="text-left py-3">Order ID</th>
@@ -651,7 +655,7 @@
                             <td>${sanitize(o.customer_name)}</td>
                             <td>${sanitize(o.device_model)}</td>
                             <td><span class="text-xs bg-white/5 px-2 py-1 rounded">${sanitize(o.status.replace(/_/g, ' '))}</span></td>
-                            <td class="text-right"><button onclick="openEvidenceModal('${o.id}')" class="btn-gold px-3 py-1 rounded-lg text-xs">View Evidence</button></td>
+                            <td class="text-right"><button onclick="openEvidenceModal('${o.id}')" class="btn-gold px-3 py-1 rounded-lg text-xs whitespace-nowrap">View Evidence</button></td>
                         </tr>
                     `).join('')}
                 </tbody>
@@ -662,9 +666,9 @@
     function renderCashier() {
         const toDriver = orders.filter(o => o.status === 'DROPPED_AT_STATION');
         const toCust = orders.filter(o => o.status === 'READY_FOR_CUSTOMER');
-        const card = (o, txt, cls) => `<div class="bg-black/30 border border-white/10 rounded-xl p-5 flex justify-between items-center"><div><h4 class="font-semibold text-white">${sanitize(o.device_model)}</h4><p class="text-sm text-gray-500">${sanitize(o.customer_name)} • $${o.repair_cost}</p></div><button onclick="advanceOrder('${o.id}')" class="${cls} px-4 py-2 rounded-lg text-xs font-medium">${txt}</button></div>`;
-        return `<div class="flex justify-between items-end mb-10"><div><h2 class="text-4xl font-bold mb-2">Cashier Portal</h2></div><button onclick="openModal('intakeModal')" class="btn-gold px-6 py-3 rounded-xl text-sm">New Intake</button></div>
-        <div class="grid grid-cols-2 gap-6">
+        const card = (o, txt, cls) => `<div class="bg-black/30 border border-white/10 rounded-xl p-4 md:p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><div><h4 class="font-semibold text-white">${sanitize(o.device_model)}</h4><p class="text-sm text-gray-500">${sanitize(o.customer_name)} • $${o.repair_cost}</p></div><button onclick="advanceOrder('${o.id}')" class="${cls} px-4 py-2 rounded-lg text-xs font-medium w-full sm:w-auto text-center">${txt}</button></div>`;
+        return `<div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-6 md:mb-10 gap-4"><div><h2 class="text-3xl md:text-4xl font-bold mb-2">Cashier Portal</h2></div><button onclick="openModal('intakeModal')" class="btn-gold px-6 py-3 rounded-xl text-sm w-full sm:w-auto">New Intake</button></div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div><h3 class="text-sm uppercase tracking-wider text-gray-400 mb-4">Hand Off to Driver</h3><div class="space-y-3">${toDriver.map(o => card(o, 'Mark Picked Up', 'bg-white/5 hover:bg-white/10 text-white border border-white/10')).join('') || '<p class="text-gray-600 text-sm italic">None waiting.</p>'}</div></div>
             <div><h3 class="text-sm uppercase tracking-wider text-gray-400 mb-4">Customer Pickup</h3><div class="space-y-3">${toCust.map(o => card(o, 'Collect & Complete', 'btn-gold')).join('') || '<p class="text-gray-600 text-sm italic">None ready.</p>'}</div></div>
         </div>`;
@@ -687,10 +691,10 @@
 
         const card = (o, type, txt) => {
             return `
-                <div class="bg-black/30 border border-white/10 rounded-xl p-5 flex flex-col gap-4">
-                    <div class="flex justify-between items-center">
+                <div class="bg-black/30 border border-white/10 rounded-xl p-4 md:p-5 flex flex-col gap-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                         <div><h4 class="font-semibold text-white">${sanitize(o.device_model)}</h4><p class="text-sm text-gray-500">${sanitize(o.customer_name)}</p></div>
-                        <button onclick="advanceOrder('${o.id}')" class="bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-lg text-xs font-medium border border-white/10">${txt}</button>
+                        <button onclick="advanceOrder('${o.id}')" class="bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-lg text-xs font-medium border border-white/10 w-full sm:w-auto text-center">${txt}</button>
                     </div>
                     <div class="flex gap-2 border-t border-white/5 pt-3">
                         ${getPhotoBtn(o, type)}
@@ -699,8 +703,8 @@
             `;
         };
 
-        return `<div class="mb-10"><h2 class="text-4xl font-bold mb-2">Driver Routes</h2></div>
-        <div class="grid grid-cols-2 gap-6">
+        return `<div class="mb-6 md:mb-10"><h2 class="text-3xl md:text-4xl font-bold mb-2">Driver Routes</h2></div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div><h3 class="text-sm uppercase tracking-wider text-blue-400 mb-4">Station Pickups</h3><div class="space-y-3">${pickStation.map(o => card(o, 'station_pickup', 'Picked Up')).join('') || '<p class="text-gray-600 text-sm italic">None scheduled.</p>'}</div>
             <h3 class="text-sm uppercase tracking-wider text-amber-400 mb-4 mt-8">Drop to Tech</h3><div class="space-y-3">${dropTech.map(o => card(o, 'tech_dropoff', 'Dropped at Tech')).join('') || '<p class="text-gray-600 text-sm italic">None.</p>'}</div></div>
             <div><h3 class="text-sm uppercase tracking-wider text-purple-400 mb-4">Tech Pickups</h3><div class="space-y-3">${pickTech.map(o => card(o, 'tech_pickup', 'Picked Up')).join('') || '<p class="text-gray-600 text-sm italic">None ready.</p>'}</div>
@@ -721,12 +725,12 @@
                 : `<button onclick="openTechVideoModal('${o.id}', 'post')" class="text-[10px] bg-white/5 hover:bg-white/10 text-white px-2 py-1 rounded-full border border-white/10">Rec Post-Repair</button>`;
 
             return `
-                <div class="bg-black/30 border border-white/10 rounded-xl p-5 flex flex-col gap-4">
-                    <div class="flex justify-between items-center">
+                <div class="bg-black/30 border border-white/10 rounded-xl p-4 md:p-5 flex flex-col gap-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                         <div><h4 class="font-semibold text-white">${sanitize(o.device_model)}</h4><p class="text-sm text-gray-500">${sanitize(o.customer_name)} • ${sanitize(o.issue)}</p></div>
-                        <button onclick="advanceOrder('${o.id}')" class="btn-gold px-4 py-2 rounded-lg text-xs font-medium">${txt}</button>
+                        <button onclick="advanceOrder('${o.id}')" class="btn-gold px-4 py-2 rounded-lg text-xs font-medium w-full sm:w-auto text-center">${txt}</button>
                     </div>
-                    <div class="flex gap-2 border-t border-white/5 pt-3">
+                    <div class="flex flex-wrap gap-2 border-t border-white/5 pt-3">
                         ${preVidBtn}
                         ${postVidBtn}
                     </div>
@@ -734,8 +738,8 @@
             `;
         };
 
-        return `<div class="mb-10"><h2 class="text-4xl font-bold mb-2">Repair Queue</h2></div>
-        <div class="grid grid-cols-2 gap-6">
+        return `<div class="mb-6 md:mb-10"><h2 class="text-3xl md:text-4xl font-bold mb-2">Repair Queue</h2></div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div><h3 class="text-sm uppercase tracking-wider text-gray-400 mb-4">Incoming</h3><div class="space-y-3">${inc.map(o => card(o, 'Start Repair')).join('') || '<p class="text-gray-600 text-sm italic">Empty.</p>'}</div></div>
             <div><h3 class="text-sm uppercase tracking-wider text-gray-400 mb-4">Repairing</h3><div class="space-y-3">${rep.map(o => card(o, 'Mark Repaired')).join('') || '<p class="text-gray-600 text-sm italic">Empty.</p>'}</div></div>
         </div>`;
