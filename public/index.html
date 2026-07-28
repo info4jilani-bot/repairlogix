@@ -167,7 +167,8 @@
             <video id="techVideoPreview" autoplay muted playsinline class="w-full max-w-md rounded-lg border border-white/10 hidden"></video>
             <div id="techRecStatus" class="text-xs text-gray-500">Camera offline</div>
             <div class="flex gap-3">
-                <button type="button" id="btnTechStartCam" onclick="startCamera('tech')" class="bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-lg text-xs border border-white/10">Start Camera</button>
+                                <button type="button" id="btnTechStartCam" onclick="startCamera('tech', activeTechOrderId, activeTechType)" class="bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-lg text-xs border border-white/10">Start Camera</button>
+                
                 <button type="button" id="btnTechRec" onclick="startRecording()" class="bg-red-600/80 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-xs hidden flex items-center gap-2">
                     <span class="w-2 h-2 bg-white rounded-full rec-dot"></span> Record
                 </button>
@@ -589,7 +590,11 @@
         document.getElementById(id).classList.remove('flex'); 
     }
     
+    let activeTechOrderId = null;
+    let activeTechType = null;
     function openTechVideoModal(orderId, type) {
+        activeTechOrderId = orderId;
+        activeTechType = type;
         const order = orders.find(o => o.id === orderId);
         if(!order) return;
         document.getElementById('techVideoTitle').innerText = type === 'pre' ? 'Pre-Repair Video' : 'Post-Repair Video';
