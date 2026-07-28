@@ -448,9 +448,15 @@
 
     // --- API CALLS ---
     async function fetchOrders() {
-        const res = await fetch('/api/orders');
-        orders = await res.json();
-        renderView();
+        try {
+            const res = await fetch('/api/orders');
+            if (!res.ok) throw new Error("Server returned " + res.status);
+            orders = await res.json();
+            renderView();
+        } catch (err) {
+            document.getElementById('view-container').innerText = "Error loading data from server: " + err.message;
+            console.error("Fetch error:", err);
+        }
     }
 
     async function advanceOrder(id) {
