@@ -42,6 +42,10 @@
             <div id="loginError" class="text-red-400 text-sm hidden"></div>
             <button type="submit" class="btn-gold w-full py-3 rounded-xl font-semibold">Sign In</button>
         </form>
+          <button onclick="showTracking()" class="text-gray-400 hover:text-[#d4af37] text-sm mt-4 flex items-center gap-2 mx-auto transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            Track My Repair
+        </button>
         <div class="mt-6 text-xs text-gray-600 bg-black/20 p-4 rounded-xl text-left">
             <p class="font-bold text-gray-400 mb-2">Default Accounts (Demo):</p>
             <p>Owner: <span class="text-[#d4af37]">owner / owner123</span></p>
@@ -52,6 +56,36 @@
     </div>
 </div>
 
+    <!-- CUSTOMER TRACKING VIEW -->
+<div id="trackingView" class="hidden fixed inset-0 overflow-y-auto p-4 z-40">
+    <div class="max-w-2xl mx-auto pt-10">
+        <div class="flex justify-center mb-6">
+            <div class="w-12 h-12 bg-gradient-to-br from-[#d4af37] to-[#8a7028] rounded-xl flex items-center justify-center shadow-lg rotate-45">
+                <div class="w-6 h-6 bg-[#08090a] rounded-sm -rotate-45 flex items-center justify-center"><div class="w-3 h-3 bg-[#d4af37] rounded-full"></div></div>
+            </div>
+        </div>
+        
+        <div class="glass rounded-3xl p-6 md:p-8">
+            <h2 class="text-2xl md:text-3xl font-bold mb-2 text-center">Track Your Repair</h2>
+            <p class="text-gray-500 text-sm text-center mb-6">Enter your Order ID (e.g., RLX-XXXXX) to see live status.</p>
+            
+            <div class="flex flex-col sm:flex-row gap-3 mb-6">
+                <input type="text" id="trackInput" placeholder="Enter Order ID" class="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#d4af37] uppercase">
+                <button onclick="trackOrder()" class="btn-gold px-6 py-3 rounded-xl font-semibold">Track</button>
+            </div>
+            
+            <div id="trackError" class="text-red-400 text-sm text-center hidden mb-4"></div>
+            
+            <div id="trackResult" class="hidden">
+                <!-- Populated by JS -->
+            </div>
+            
+            <button onclick="showLogin()" class="text-gray-500 hover:text-white text-sm mt-8 flex items-center gap-2 mx-auto">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Back to Login
+            </button>
+        </div>
+    </div>
+</div>
 <!-- MAIN APP VIEW -->
 <div id="appView" class="hidden w-full">
     <!-- Top Bar -->
@@ -69,6 +103,8 @@
             <div class="flex items-center gap-4">
                 <span class="text-sm text-gray-400 hidden sm:inline">Welcome, <span class="text-white font-medium" id="userNameDisplay">User</span></span>
                 <button onclick="logout()" class="text-xs bg-red-500/10 text-red-400 border border-red-500/20 px-4 py-2 rounded-lg hover:bg-red-500/20 transition">Logout</button>
+            
+            
             </div>
         </div>
     </header>
@@ -273,6 +309,90 @@
     function showLogin() {
         document.getElementById('loginView').classList.remove('hidden');
         document.getElementById('appView').classList.add('hidden');
+        document.getElementById('trackingView').classList.add('hidden');
+    }
+
+    function showTracking() {
+        document.getElementById('loginView').classList.add('hidden');
+        document.getElementById('appView').classList.add('hidden');
+        document.getElementById('trackingView').classList.remove('hidden');
+        document.getElementById('trackResult').classList.add('hidden');
+        document.getElementById('trackError').classList.add('hidden');
+        document.getElementById('trackInput').value = '';
+    }
+
+    async function trackOrder() {
+        const id = document.getElementById('trackInput').value.trim().toUpperCase();
+        const errBox = document.getElementById('trackError');
+        const resBox = document.getElementById('trackResult');
+        
+        errBox.classList.add('hidden');
+        resBox.classList.add('hidden');
+
+        if (!id) {
+            errBox.innerText = "Please enter an Order ID.";
+            errBox.classList.remove('hidden');
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/track/${id}`);
+            const data = await res.json();
+            
+            if (!res.ok || !data.success) {
+                errBox.innerText = data.error || "Order not found.";
+                errBox.classList.remove('hidden');
+                return;
+            }
+
+            const o = data.order;
+            const workflow = ['DROPPED_AT_STATION', 'DRIVER_TO_TECH', 'AT_TECH', 'REPAIRING', 'REPAIR_DONE', 'DRIVER_TO_STATION', 'READY_FOR_CUSTOMER', 'COMPLETED'];
+            const currentStep = workflow.indexOf(o.status);
+
+            const steps = [
+                { icon: '📥', label: 'Dropped at Station' },
+                { icon: '🚗', label: 'Driver Picked Up' },
+                { icon: '🔬', label: 'At Tech Lab' },
+                { icon: '🛠️', label: 'Repairing' },
+                { icon: '✅', label: 'Repair Complete' },
+                { icon: '🚗', label: 'En Route to Station' },
+                { icon: '📦', label: 'Ready for Pickup!' },
+                { icon: '🎉', label: 'Completed & Paid' }
+            ];
+
+            let timelineHtml = '';
+            steps.forEach((step, index) => {
+                const isDone = index <= currentStep;
+                const isCurrent = index === currentStep;
+                timelineHtml += `
+                    <div class="flex items-center gap-4 ${isCurrent ? 'scale-105' : ''} transition-transform">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl ${isDone ? 'bg-[#d4af37]/20 border-2 border-[#d4af37]' : 'bg-black/40 border-2 border-white/10'}">
+                            ${isDone ? step.icon : '○'}
+                        </div>
+                        <div>
+                            <p class="font-medium ${isDone ? 'text-white' : 'text-gray-600'}">${step.label}</p>
+                            ${isCurrent ? '<p class="text-xs text-[#d4af37]">Current Status</p>' : ''}
+                        </div>
+                    </div>
+                `;
+            });
+
+            resBox.innerHTML = `
+                <div class="bg-[#d4af37]/10 border border-[#d4af37]/20 rounded-xl p-4 mb-6">
+                    <p class="text-xs text-[#d4af37] uppercase tracking-wider">Device</p>
+                    <p class="text-xl font-bold text-white">${sanitize(o.device_model)}</p>
+                    <p class="text-sm text-gray-400 mt-1">Customer: ${sanitize(o.customer_name)}</p>
+                </div>
+                <div class="space-y-4 pl-2">
+                    ${timelineHtml}
+                </div>
+            `;
+            resBox.classList.remove('hidden');
+
+        } catch (err) {
+            errBox.innerText = "Network error. Please try again.";
+            errBox.classList.remove('hidden');
+        }
     }
 
     function showApp() {
