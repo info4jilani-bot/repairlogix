@@ -131,7 +131,7 @@ app.patch('/api/orders/:id/driver-image', (req, res) => {
     const base64Data = imageBase64.split(',')[1];
     const fileName = `driver_${type}_${Date.now()}.png`;
     
-    fs.writeFileSync(path.join(driverUploadDir, fileName), base64Data, 'base64');
+   //  fs.writeFileSync(path.join(driverUploadDir, fileName), base64Data, 'base64');
     const imgUrl = `/uploads/driver/${fileName}`;
 
     db.prepare(`UPDATE orders SET ${column} = ? WHERE id = ?`).run(imgUrl, req.params.id);
@@ -163,17 +163,10 @@ app.post('/api/orders', (req, res) => {
     const payouts = calculatePayouts(repairCost);
     if (!payouts.isProfitable) return res.status(400).json({ error: "Repair cost too low. Minimum $50 required." });
 
-    let signatureUrl = null;
+     let signatureUrl = null;
     if (signatureBase64) {
-      // Safer split to handle all browser base64 formats
-      const base64Data = signatureBase64.split(',')[1];
-      const fileName = `sig_${Date.now()}.png`;
-      try {
-        fs.writeFileSync(path.join(sigUploadDir, fileName), base64Data, 'base64');
-        signatureUrl = `/uploads/${fileName}`;
-      } catch(e) {
-        console.error("Signature save error:", e);
-      }
+      // Save base64 string directly to database to prevent file loss on Render's free tier
+      signatureUrl = signatureBase64;
     }
 
     const id = `RLX-${Date.now().toString(36).toUpperCase()}`;
