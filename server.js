@@ -239,5 +239,15 @@ app.patch('/api/orders/:id/advance', requireAuth, (req, res) => {
     res.json({ success: true, newStatus: order.status });
   } catch (error) { res.status(500).json({ error: "Failed" }); }
 });
-
+// --- PUBLIC TRACKING API (No Login Required) ---
+app.get('/api/track/:id', (req, res) => {
+  try {
+    // Only return safe, public data (no financials or internal IDs)
+    const order = db.prepare('SELECT id, customer_name, device_model, status, created_at FROM orders WHERE id = ?').get(req.params.id.toUpperCase());
+    if (!order) return res.status(404).json({ error: "Invalid tracking code." });
+    res.json({ success: true, order });
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
 app.listen(PORT, () => console.log(`RepairLogix running on port ${PORT}`));
