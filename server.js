@@ -128,7 +128,7 @@ app.patch('/api/orders/:id/driver-image', (req, res) => {
     const column = `driver_${type}_img`;
     
     // Using simple string replace to prevent regex syntax errors
-    const base64Data = imageBase64.replace("data:image/png;base64,", "");
+       const base64Data = imageBase64.split(',')[1];
     const fileName = `driver_${type}_${Date.now()}.png`;
     
     fs.writeFileSync(path.join(driverUploadDir, fileName), base64Data, 'base64');
@@ -165,12 +165,17 @@ app.post('/api/orders', (req, res) => {
     if (!payouts.isProfitable) return res.status(400).json({ error: "Repair cost too low. Minimum $50 required." });
 
     let signatureUrl = null;
+    let signatureUrl = null;
     if (signatureBase64) {
-      // Using simple string replace to prevent regex syntax errors
-      const base64Data = signatureBase64.replace("data:image/png;base64,", "");
+      // Safer split to handle all browser base64 formats
+      const base64Data = signatureBase64.split(',')[1];
       const fileName = `sig_${Date.now()}.png`;
-      fs.writeFileSync(path.join(sigUploadDir, fileName), base64Data, 'base64');
-      signatureUrl = `/uploads/${fileName}`;
+      try {
+        fs.writeFileSync(path.join(sigUploadDir, fileName), base64Data, 'base64');
+        signatureUrl = `/uploads/${fileName}`;
+      } catch(e) {
+        console.error("Signature save error:", e);
+      }
     }
 
     const id = `RLX-${Date.now().toString(36).toUpperCase()}`;
