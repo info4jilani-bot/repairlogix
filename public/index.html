@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RepairLogix — Enterprise Portals</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg-primary: #08090a; --bg-card: #121316; --accent-gold: #d4af37; --border-subtle: rgba(255, 255, 255, 0.05); }
+        * { -webkit-font-smoothing: antialiased; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-primary); color: #f5f5f7; background-image: radial-gradient(circle at 15% 20%, rgba(212, 175, 55, 0.05) 0%, transparent 40%); overflow-x: hidden; }
+        h1, h2, h3, h4 { font-family: 'Space Grotesk', sans-serif; letter-spacing: -0.02em; }
+        .glass { background: rgba(18, 19, 22, 0.6); backdrop-filter: blur(24px); border: 1px solid var(--border-subtle); }
+        .btn-gold { background: linear-gradient(180deg, #e6c757 0%, #d4af37 100%); color: #000; font-weight: 600; transition: all 0.3s; }
+        .btn-gold:hover { transform: translateY(-1px); }
+        .btn-ghost { border: 1px solid rgba(255,255,255,0.1); color: #a1a1aa; }
+        .role-btn { transition: all 0.3s ease; border: 1px solid transparent; }
+        .role-btn.active { background: rgba(212, 175, 55, 0.1); border-color: rgba(212, 175, 55, 0.3); color: #d4af37; }
+        #sigCanvas { background: #fff; border-radius: 12px; cursor: crosshair; width: 100%; height: 150px; }
+        select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23d4af37'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1.25em; padding-right: 2.5rem; }
+        .step-active { background-color: var(--accent-gold); color: #000; border-color: var(--accent-gold) !important; }
+        .step-completed { background-color: rgba(212, 175, 55, 0.2); color: var(--accent-gold); border-color: rgba(212, 175, 55, 0.3) !important; }
+        .rec-dot { animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body class="flex">
+
+<aside class="w-64 bg-black/20 backdrop-blur-xl border-r border-white/5 flex flex-col fixed h-full z-20">
+    <div class="p-6 border-b border-white/5">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 bg-gradient-to-br from-[#d4af37] to-[#8a7028] rounded-lg flex items-center justify-center shadow-lg rotate-45">
+                <div class="w-4 h-4 bg-[#08090a] rounded-sm -rotate-45 flex items-center justify-center"><div class="w-2 h-2 bg-[#d4af37] rounded-full"></div></div>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-tight">Repair<span class="text-[#d4af37]">Logix</span></h1>
+                <p class="text-[10px] uppercase tracking-[0.2em] text-gray-500 -mt-1">Enterprise Portal</p>
+            </div>
+        </div>
+    </div>
+    <div class="p-4 flex-1">
+        <p class="text-[10px] uppercase tracking-widest text-gray-600 mb-3 px-2">Switch Role View</p>
+        <nav class="space-y-1">
+            <button onclick="switchRole('owner')" id="btn-owner" class="role-btn w-full text-left px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white flex items-center gap-3">Company Owner</button>
+            <button onclick="switchRole('cashier')" id="btn-cashier" class="role-btn active w-full text-left px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white flex items-center gap-3">Cashier Intake</button>
+            <button onclick="switchRole('driver')" id="btn-driver" class="role-btn w-full text-left px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white flex items-center gap-3">Logistics Driver</button>
+            <button onclick="switchRole('tech')" id="btn-tech" class="role-btn w-full text-left px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white flex items-center gap-3">Repair Technician</button>
+        </nav>
+    </div>
+</aside>
+
+<main class="flex-1 ml-64 p-10 w-[calc(100%-16rem)]">
+    <div id="view-container">Loading...</div>
+</main>
+
+<!-- Cashier Intake Modal -->
+<div id="intakeModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+    <div class="glass rounded-3xl w-full max-w-2xl p-8 relative max-h-[90vh] flex flex-col">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-2xl font-bold">New Device Intake</h3>
+            <button onclick="closeModal('intakeModal')" class="text-gray-500 hover:text-white text-2xl">&times;</button>
+        </div>
+        <div class="flex items-center justify-center gap-4 mb-6">
+            <div class="flex items-center gap-2"><div id="step-dot-1" class="step-active w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-sm font-semibold">1</div><span class="text-sm font-medium text-white">Details & Estimate</span></div>
+            <div class="w-8 h-px bg-white/10"></div>
+            <div class="flex items-center gap-2"><div id="step-dot-2" class="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-sm font-semibold text-gray-500">2</div><span id="step-text-2" class="text-sm font-medium text-gray-500">Diagnostic Video</span></div>
+            <div class="w-8 h-px bg-white/10"></div>
+            <div class="flex items-center gap-2"><div id="step-dot-3" class="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-sm font-semibold text-gray-500">3</div><span id="step-text-3" class="text-sm font-medium text-gray-500">Signature</span></div>
+        </div>
+        <form id="intakeForm" class="space-y-5 overflow-y-auto flex-1">
+            <div id="wizard-step-1" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="block text-xs uppercase tracking-wider text-gray-500 mb-2">Customer Name</label><input type="text" id="m_customerName" required class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#d4af37]"></div>
+                    <div><label class="block text-xs uppercase tracking-wider text-gray-500 mb-2">Phone</label><input type="tel" id="m_customerPhone" required class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#d4af37]"></div>
+                </div>
+                <div class="bg-black/30 border border-[#d4af37]/20 rounded-xl p-4 space-y-4">
+                    <h4 class="text-xs uppercase tracking-wider text-[#d4af37]">Itemized Estimate Engine</h4>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs uppercase tracking-wider text-gray-500 mb-2">Device Model</label>
+                            <select id="m_deviceModel" onchange="updateEstimate()" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#d4af37]">
+                                <optgroup label="Apple Devices">
+                                    <option value="iPhone 17 Pro Max">iPhone 17 Pro Max</option><option value="iPhone 17 Pro">iPhone 17 Pro</option><option value="iPhone 17">iPhone 17</option>
+                                    <option value="iPhone 16 Pro Max">iPhone 16 Pro Max</option><option value="iPhone 16 Pro">iPhone 16 Pro</option><option value="iPhone 16 Plus">iPhone 16 Plus</option><option value="iPhone 16">iPhone 16</option>
+                                    <option value="iPhone 15 Pro Max">iPhone 15 Pro Max</option><option value="iPhone 15 Pro">iPhone 15 Pro</option><option value="iPhone 15 Plus">iPhone 15 Plus</option><option value="iPhone 15">iPhone 15</option>
+                                    <option value="iPhone 14 Pro Max">iPhone 14 Pro Max</option><option value="iPhone 14 Pro">iPhone 14 Pro</option><option value="iPhone 14 Plus">iPhone 14 Plus</option><option value="iPhone 14">iPhone 14</option>
+                                    <option value="iPhone 13 Pro Max">iPhone 13 Pro Max</option><option value="iPhone 13 Pro">iPhone 13 Pro</option><option value="iPhone 13">iPhone 13</option><option value="iPhone SE (3rd Gen)">iPhone SE (3rd Gen)</option>
+                                </optgroup>
+                                <optgroup label="Samsung Devices">
+                                    <option value="Galaxy S26 Ultra">Galaxy S26 Ultra</option><option value="Galaxy S26+">Galaxy S26+</option><option value="Galaxy S26">Galaxy S26</option>
+                                    <option value="Galaxy S25 Ultra">Galaxy S25 Ultra</option><option value="Galaxy S25+">Galaxy S25+</option><option value="Galaxy S25">Galaxy S25</option>
+                                    <option value="Galaxy Z Fold6">Galaxy Z Fold6</option><option value="Galaxy Z Flip6">Galaxy Z Flip6</option><option value="Galaxy S24 FE">Galaxy S24 FE</option><option value="Galaxy A55">Galaxy A55</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs uppercase tracking-wider text-gray-500 mb-2">Repair Type</label>
+                            <select id="m_repairType" onchange="updateEstimate()" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#d4af37]">
+                                <option value="screen">Screen Only / Module</option><option value="battery">Standalone Battery</option><option value="back_glass">Back Glass Only</option>
+                                <option value="rear_cam">Rear Camera Module</option><option value="full_device">Full Device / "Other Damage"</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs uppercase tracking-wider text-gray-500 mb-2">Auto-Calc Repair Cost ($)</label>
+                        <input type="number" id="m_repairCost" value="379" min="30" max="1000" required class="w-full bg-transparent text-3xl font-bold text-[#d4af37] outline-none border-b border-[#d4af37]/30 focus:border-[#d4af37] pb-1">
+                    </div>
+                </div>
+                <div><label class="block text-xs uppercase tracking-wider text-gray-500 mb-2">Specific Issue / Notes</label><textarea id="m_issue" required rows="2" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#d4af37]" placeholder="e.g., Severe shatter, original parts, etc."></textarea></div>
+                <button type="button" onclick="nextStep(2)" class="btn-gold w-full py-3 rounded-xl font-semibold">Continue to Diagnostic →</button>
+            </div>
+            <div id="wizard-step-2" class="hidden space-y-4">
+                <p class="text-gray-400 text-sm">Record a video demonstrating the device's condition (screen, touch, cameras, ports) to protect against future disputes.</p>
+                <div class="grid grid-cols-2 gap-4 text-xs text-gray-400 bg-black/20 p-4 rounded-xl border border-white/5">
+                    <div class="flex items-center gap-2"><input type="checkbox" checked class="rounded bg-black border-white/10 text-[#d4af37] focus:ring-[#d4af37]"> Screen Condition (Front/Back)</div>
+                    <div class="flex items-center gap-2"><input type="checkbox" checked class="rounded bg-black border-white/10 text-[#d4af37] focus:ring-[#d4af37]"> Touch Responsiveness</div>
+                    <div class="flex items-center gap-2"><input type="checkbox" checked class="rounded bg-black border-white/10 text-[#d4af37] focus:ring-[#d4af37]"> Front & Back Cameras</div>
+                    <div class="flex items-center gap-2"><input type="checkbox" checked class="rounded bg-black border-white/10 text-[#d4af37] focus:ring-[#d4af37]"> Speakers & Charging Port</div>
+                </div>
+                <div class="bg-black/40 rounded-xl p-4 flex flex-col items-center justify-center space-y-3 border border-white/10">
+                    <video id="diagVideoPreview" autoplay muted playsinline class="w-full max-w-md rounded-lg border border-white/10 hidden"></video>
+                    <div id="recStatus" class="text-xs text-gray-500">Camera offline</div>
+                    <div class="flex gap-3">
+                        <button type="button" id="btnStartCam" onclick="startCamera('intake')" class="bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-lg text-xs border border-white/10">Start Camera</button>
+                        <button type="button" id="btnRec" onclick="startRecording()" class="bg-red-600/80 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-xs hidden flex items-center gap-2">
+                            <span class="w-2 h-2 bg-white rounded-full rec-dot"></span> Record
+                        </button>
+                        <button type="button" id="btnStop" onclick="stopRecording()" class="bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded-lg text-xs hidden">Stop & Save</button>
+                    </div>
+                </div>
+                <div class="flex gap-3 pt-2">
+                    <button type="button" onclick="nextStep(1)" class="btn-ghost flex-1 py-3 rounded-xl text-sm">Back</button>
+                    <button type="button" onclick="nextStep(3)" class="btn-gold flex-1 py-3 rounded-xl text-sm">Continue to Signature →</button>
+                </div>
+            </div>
+            <div id="wizard-step-3" class="hidden space-y-4">
+                <div class="bg-black/30 border border-white/10 rounded-xl p-4 flex justify-between items-center">
+                    <span class="text-sm text-gray-400">Final Estimate Approval:</span>
+                    <span class="text-2xl font-bold text-[#d4af37]">$<span id="finalPriceDisplay">379</span></span>
+                </div>
+                <div>
+                    <label class="block text-xs uppercase tracking-wider text-gray-500 mb-2 text-center">Customer Digital Signature</label>
+                    <canvas id="sigCanvas" width="600" height="150"></canvas>
+                    <button type="button" onclick="clearSig()" class="text-xs text-gray-500 mt-2 hover:text-white">Clear Signature</button>
+                </div>
+                <div class="flex gap-3 pt-2">
+                    <button type="button" onclick="nextStep(2)" class="btn-ghost flex-1 py-3 rounded-xl text-sm">Back</button>
+                    <button type="submit" class="btn-gold flex-1 py-3 rounded-xl text-sm">Push to Driver Dispatch</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Technician Video Modal -->
+<div id="techVideoModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+    <div class="glass rounded-3xl w-full max-w-2xl p-8 relative max-h-[90vh] flex flex-col">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h3 class="text-2xl font-bold" id="techVideoTitle">Tech Video Recorder</h3>
+                <p class="text-gray-500 text-sm" id="techVideoSubtitle">Order: ...</p>
+            </div>
+            <button onclick="closeModal('techVideoModal')" class="text-gray-500 hover:text-white text-2xl">&times;</button>
+        </div>
+        <div class="bg-black/40 rounded-xl p-4 flex flex-col items-center justify-center space-y-3 border border-white/10 flex-1">
+            <video id="techVideoPreview" autoplay muted playsinline class="w-full max-w-md rounded-lg border border-white/10 hidden"></video>
+            <div id="techRecStatus" class="text-xs text-gray-500">Camera offline</div>
+            <div class="flex gap-3">
+                <button type="button" id="btnTechStartCam" onclick="startCamera('tech')" class="bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-lg text-xs border border-white/10">Start Camera</button>
+                <button type="button" id="btnTechRec" onclick="startRecording()" class="bg-red-600/80 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-xs hidden flex items-center gap-2">
+                    <span class="w-2 h-2 bg-white rounded-full rec-dot"></span> Record
+                </button>
+                <button type="button" id="btnTechStop" onclick="stopRecording()" class="bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded-lg text-xs hidden">Stop & Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Driver Photo Modal -->
+<div id="driverPhotoModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+    <div class="glass rounded-3xl w-full max-w-2xl p-8 relative max-h-[90vh] flex flex-col">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h3 class="text-2xl font-bold">Driver Photo Capture</h3>
+                <p class="text-gray-500 text-sm" id="photoSubtitle">Take a picture of the device condition</p>
+            </div>
+            <button onclick="closeModal('driverPhotoModal')" class="text-gray-500 hover:text-white text-2xl">&times;</button>
+        </div>
+        <div class="bg-black/40 rounded-xl p-4 flex flex-col items-center justify-center space-y-3 border border-white/10 flex-1">
+            <video id="driverPhotoPreview" autoplay muted playsinline class="w-full max-w-md rounded-lg border border-white/10 hidden"></video>
+            <canvas id="photoCanvas" class="hidden"></canvas>
+            <div id="photoStatus" class="text-xs text-gray-500">Initializing camera...</div>
+            <div class="flex gap-3">
+                <button type="button" id="btnCapturePhoto" onclick="capturePhoto()" class="btn-gold px-6 py-2 rounded-lg text-xs hidden">Capture Photo</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let orders = [];
+    let currentRole = 'cashier';
+    let sigCanvas, sigCtx, drawing = false;
+    let mediaRecorder, recordedChunks = [];
+    let uploadedVideoUrl = null;
+    let videoContext = { mode: null, orderId: null, type: null };
+    let photoStream = null;
+    let photoContext = { orderId: null, type: null };
+
+    // --- PRICING MATRIX ---
+    const PRICING_MATRIX = {
+        "iPhone 17 Pro Max": { screen: 379, battery: 119, back_glass: 159, rear_cam: 249, full_device: 799 },
+        "iPhone 17 Pro": { screen: 349, battery: 119, back_glass: 159, rear_cam: 249, full_device: 749 },
+        "iPhone 17": { screen: 329, battery: 119, back_glass: 159, rear_cam: 249, full_device: 699 },
+        "iPhone 16 Pro Max": { screen: 379, battery: 119, back_glass: 199, rear_cam: 249, full_device: 799 },
+        "iPhone 16 Pro": { screen: 329, battery: 119, back_glass: 169, rear_cam: 249, full_device: 749 },
+        "iPhone 16 Plus": { screen: 279, battery: 99, back_glass: 199, rear_cam: 169, full_device: 649 },
+        "iPhone 16": { screen: 249, battery: 99, back_glass: 169, rear_cam: 169, full_device: 549 },
+        "iPhone 15 Pro Max": { screen: 379, battery: 119, back_glass: 199, rear_cam: 229, full_device: 749 },
+        "iPhone 15 Pro": { screen: 329, battery: 119, back_glass: 169, rear_cam: 229, full_device: 699 },
+        "iPhone 15 Plus": { screen: 279, battery: 99, back_glass: 199, rear_cam: 169, full_device: 619 },
+        "iPhone 15": { screen: 249, battery: 99, back_glass: 169, rear_cam: 169, full_device: 549 },
+        "iPhone 14 Pro Max": { screen: 379, battery: 99, back_glass: 549, rear_cam: 219, full_device: 699 },
+        "iPhone 14 Pro": { screen: 329, battery: 99, back_glass: 499, rear_cam: 219, full_device: 649 },
+        "iPhone 14 Plus": { screen: 279, battery: 99, back_glass: 199, rear_cam: 169, full_device: 599 },
+        "iPhone 14": { screen: 249, battery: 99, back_glass: 169, rear_cam: 169, full_device: 549 },
+        "iPhone 13 Pro Max": { screen: 329, battery: 89, back_glass: null, rear_cam: 199, full_device: 599 },
+        "iPhone 13 Pro": { screen: 279, battery: 89, back_glass: null, rear_cam: 199, full_device: 549 },
+        "iPhone 13": { screen: 279, battery: 89, back_glass: null, rear_cam: 169, full_device: 449 },
+        "iPhone SE (3rd Gen)": { screen: 129, battery: 69, back_glass: null, rear_cam: 99, full_device: 299 },
+        "Galaxy S26 Ultra": { screen: 289, battery: 99, back_glass: 115, rear_cam: 219, full_device: 599 },
+        "Galaxy S26+": { screen: 229, battery: 99, back_glass: 99, rear_cam: 140, full_device: 499 },
+        "Galaxy S26": { screen: 209, battery: 79, back_glass: 79, rear_cam: 120, full_device: 449 },
+        "Galaxy S25 Ultra": { screen: 259, battery: 99, back_glass: 109, rear_cam: 219, full_device: 549 },
+        "Galaxy S25+": { screen: 199, battery: 99, back_glass: 89, rear_cam: 140, full_device: 449 },
+        "Galaxy S25": { screen: 174, battery: 79, back_glass: 69, rear_cam: 120, full_device: 399 },
+        "Galaxy Z Fold6": { screen: 549, battery: 109, back_glass: 149, rear_cam: 199, full_device: 699, note: "Screen price is for Inner Screen. Outer Screen is $199. Adjust manually if repairing outer only." },
+        "Galaxy Z Flip6": { screen: 399, battery: 99, back_glass: 99, rear_cam: 149, full_device: 599, note: "Screen price is for Inner Screen. Outer Screen is $129. Adjust manually if repairing outer only." },
+        "Galaxy S24 FE": { screen: 160, battery: 79, back_glass: 69, rear_cam: 99, full_device: 349 },
+        "Galaxy A55": { screen: 129, battery: 69, back_glass: 59, rear_cam: 89, full_device: 199 }
+    };
+
+    function updateEstimate() {
+        const model = document.getElementById('m_deviceModel').value;
+        const type = document.getElementById('m_repairType').value;
+        const device = PRICING_MATRIX[model];
+        if (!device) return;
+        if (type === 'back_glass' && device.back_glass === null) {
+            alert("Back glass repair for this model is not available standalone. It requires a Full Device enclosure replacement. Switching to 'Full Device' pricing.");
+            document.getElementById('m_repairType').value = 'full_device';
+            document.getElementById('m_repairCost').value = device.full_device;
+            return;
+        }
+        document.getElementById('m_repairCost').value = device[type];
+        if (type === 'screen' && device.note) alert(device.note);
+    }
+
+    function sanitize(str) {
+        if (!str) return "";
+        return String(str).replace(/[&<>"']/g, function (m) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+        });
+    }
+
+    function nextStep(step) {
+        document.getElementById('wizard-step-1').classList.add('hidden');
+        document.getElementById('wizard-step-2').classList.add('hidden');
+        document.getElementById('wizard-step-3').classList.add('hidden');
+        document.getElementById(`wizard-step-${step}`).classList.remove('hidden');
+        for (let i = 1; i <= 3; i++) {
+            const dot = document.getElementById(`step-dot-${i}`);
+            const text = document.getElementById(`step-text-${i}`);
+            dot.classList.remove('step-active', 'step-completed');
+            dot.classList.add('text-gray-500');
+            if(text) text.classList.add('text-gray-500'); if(text) text.classList.remove('text-white');
+            if (i < step) { dot.classList.add('step-completed'); dot.innerHTML = `✓`; if(text) text.classList.remove('text-gray-500'); if(text) text.classList.add('text-white'); }
+            else if (i === step) { dot.classList.add('step-active'); dot.innerText = i; if(text) text.classList.remove('text-gray-500'); if(text) text.classList.add('text-white'); }
+            else { dot.innerText = i; }
+        }
+        if (step === 3) document.getElementById('finalPriceDisplay').innerText = document.getElementById('m_repairCost').value;
+    }
+
+    // --- VIDEO RECORDER LOGIC (Cashier & Tech) ---
+    let videoStream;
+    async function startCamera(mode, orderId = null, type = null) {
+        videoContext = { mode, orderId, type };
+        try {
+            videoStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            const videoEl = mode === 'intake' ? 'diagVideoPreview' : 'techVideoPreview';
+            const btnStart = mode === 'intake' ? 'btnStartCam' : 'btnTechStartCam';
+            const btnRec = mode === 'intake' ? 'btnRec' : 'btnTechRec';
+            const statusEl = mode === 'intake' ? 'recStatus' : 'techRecStatus';
+            
+            document.getElementById(videoEl).srcObject = videoStream;
+            document.getElementById(videoEl).classList.remove('hidden');
+            document.getElementById(btnStart).classList.add('hidden');
+            document.getElementById(btnRec).classList.remove('hidden');
+            document.getElementById(statusEl).innerText = "Camera ready. Click Record to begin.";
+        } catch (err) {
+            alert("Camera access denied or not available. Please ensure you are on HTTPS and allow camera permissions.");
+        }
+    }
+
+    function startRecording() {
+        recordedChunks = [];
+        mediaRecorder = new MediaRecorder(videoStream);
+        mediaRecorder.ondataavailable = (e) => e.data.size > 0 && recordedChunks.push(e.data);
+        mediaRecorder.onstop = uploadVideo;
+        mediaRecorder.start();
+        
+        const isIntake = videoContext.mode === 'intake';
+        document.getElementById(isIntake ? 'btnRec' : 'btnTechRec').classList.add('hidden');
+        document.getElementById(isIntake ? 'btnStop' : 'btnTechStop').classList.remove('hidden');
+        document.getElementById(isIntake ? 'recStatus' : 'techRecStatus').innerHTML = '<span class="text-red-500 font-bold flex items-center gap-1"><span class="w-2 h-2 bg-red-500 rounded-full rec-dot"></span> RECORDING...</span>';
+    }
+
+    function stopRecording() {
+        mediaRecorder.stop();
+        const isIntake = videoContext.mode === 'intake';
+        document.getElementById(isIntake ? 'btnStop' : 'btnTechStop').classList.add('hidden');
+        document.getElementById(isIntake ? 'recStatus' : 'techRecStatus').innerText = "Saving video to server...";
+    }
+
+    async function uploadVideo() {
+        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+        const formData = new FormData();
+        formData.append('video', blob, 'diagnostic.webm');
+
+        try {
+            const res = await fetch('/api/upload-video', { method: 'POST', body: formData });
+            const data = await res.json();
+            if (data.success) {
+                const isIntake = videoContext.mode === 'intake';
+                videoStream.getTracks().forEach(track => track.stop());
+
+                if (isIntake) {
+                    uploadedVideoUrl = data.videoUrl;
+                    document.getElementById('recStatus').innerHTML = '<span class="text-emerald-400 font-bold">✓ Video Saved!</span>';
+                    document.getElementById('btnRec').classList.remove('hidden');
+                } else {
+                    await fetch(`/api/orders/${videoContext.orderId}/tech-video`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ type: videoContext.type, videoUrl: data.videoUrl })
+                    });
+                    document.getElementById('techRecStatus').innerHTML = '<span class="text-emerald-400 font-bold">✓ Video Saved to Order!</span>';
+                    document.getElementById('btnTechRec').classList.add('hidden');
+                    document.getElementById('btnTechStartCam').classList.remove('hidden');
+                    document.getElementById('techVideoPreview').classList.add('hidden');
+                    fetchOrders(); 
+                }
+            }
+        } catch (err) {
+            alert("Failed to upload video.");
+        }
+    }
+
+    // --- DRIVER PHOTO LOGIC ---
+    async function openPhotoModal(orderId, type) {
+        photoContext = { orderId, type };
+        const typeMap = {
+            station_pickup: "Pickup from Gas Station",
+            tech_dropoff: "Drop-off at Tech Lab",
+            tech_pickup: "Pickup from Tech Lab",
+            station_dropoff: "Drop-off at Gas Station"
+        };
+        document.getElementById('photoSubtitle').innerText = `Action: ${typeMap[type]}`;
+        openModal('driverPhotoModal');
+        
+        try {
+            // Request back camera specifically for driver
+            photoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
+            document.getElementById('driverPhotoPreview').srcObject = photoStream;
+            document.getElementById('driverPhotoPreview').classList.remove('hidden');
+            document.getElementById('btnCapturePhoto').classList.remove('hidden');
+            document.getElementById('photoStatus').innerText = "Camera ready. Position device and click Capture.";
+        } catch (err) {
+            document.getElementById('photoStatus').innerText = "Camera access denied.";
+        }
+    }
+
+    async function capturePhoto() {
+        const video = document.getElementById('driverPhotoPreview');
+        const canvas = document.getElementById('photoCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set canvas size to match video stream
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        // Draw video frame to canvas
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Convert to base64
+        const imageBase64 = canvas.toDataURL('image/png');
+        
+        // Stop camera stream
+        photoStream.getTracks().forEach(track => track.stop());
+        document.getElementById('driverPhotoPreview').classList.add('hidden');
+        document.getElementById('btnCapturePhoto').classList.add('hidden');
+        document.getElementById('photoStatus').innerText = "Saving photo to server...";
+
+        // Upload to Server
+        try {
+            const res = await fetch(`/api/orders/${photoContext.orderId}/driver-image`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: photoContext.type, imageBase64 })
+            });
+            const data = await res.json();
+            if (data.success) {
+                document.getElementById('photoStatus').innerHTML = '<span class="text-emerald-400 font-bold">✓ Photo Saved!</span>';
+                setTimeout(() => {
+                    closeModal('driverPhotoModal');
+                    fetchOrders();
+                }, 1000);
+            }
+        } catch (err) {
+            document.getElementById('photoStatus').innerText = "Failed to save photo.";
+        }
+    }
+
+    // --- SIGNATURE PAD LOGIC ---
+    window.onload = () => {
+        sigCanvas = document.getElementById('sigCanvas');
+        sigCtx = sigCanvas.getContext('2d');
+        sigCtx.strokeStyle = "#000"; sigCtx.lineWidth = 2;
+        sigCanvas.addEventListener('mousedown', startDraw);
+        sigCanvas.addEventListener('mousemove', draw);
+        sigCanvas.addEventListener('mouseup', () => drawing = false);
+        sigCanvas.addEventListener('mouseleave', () => drawing = false);
+        sigCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDraw(e.touches[0]); }, { passive: false });
+        sigCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e.touches[0]); }, { passive: false });
+        sigCanvas.addEventListener('touchend', () => drawing = false);
+        fetchOrders();
+    };
+
+    function getPos(e) { const r = sigCanvas.getBoundingClientRect(); return { x: (e.clientX || e.pageX) - r.left, y: (e.clientY || e.pageY) - r.top }; }
+    function startDraw(e) { drawing = true; sigCtx.beginPath(); sigCtx.moveTo(getPos(e).x, getPos(e).y); }
+    function draw(e) { if(!drawing) return; sigCtx.lineTo(getPos(e).x, getPos(e).y); sigCtx.stroke(); }
+    function clearSig() { sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height); }
+
+    // --- API CALLS ---
+    async function fetchOrders() {
+        const res = await fetch('/api/orders');
+        orders = await res.json();
+        renderView();
+    }
+
+    async function advanceOrder(id) {
+        await fetch(`/api/orders/${id}/advance`, { method: 'PATCH' });
+        fetchOrders();
+    }
+
+    document.getElementById('intakeForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const signatureBase64 = sigCanvas.toDataURL('image/png');
+        const res = await fetch('/api/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                customerName: m_customerName.value,
+                customerPhone: m_customerPhone.value,
+                deviceModel: m_deviceModel.value,
+                issue: `${m_repairType.options[m_repairType.selectedIndex].text} - ${m_issue.value}`,
+                repairCost: m_repairCost.value,
+                signatureBase64,
+                diagVideoUrl: uploadedVideoUrl
+            })
+        });
+
+        if(res.ok) {
+            closeModal('intakeModal');
+            uploadedVideoUrl = null;
+            fetchOrders();
+        } else {
+            const err = await res.json();
+            alert("Error: " + err.error);
+        }
+    });
+
+    function openModal(id) { 
+        document.getElementById(id).classList.remove('hidden'); 
+        document.getElementById(id).classList.add('flex'); 
+        if(id === 'intakeModal') { nextStep(1); updateEstimate(); }
+    }
+    function closeModal(id) { 
+        document.getElementById(id).classList.add('hidden'); 
+        document.getElementById(id).classList.remove('flex'); 
+    }
+    
+    function openTechVideoModal(orderId, type) {
+        const order = orders.find(o => o.id === orderId);
+        if(!order) return;
+        document.getElementById('techVideoTitle').innerText = type === 'pre' ? 'Pre-Repair Video' : 'Post-Repair Video';
+        document.getElementById('techVideoSubtitle').innerText = `Order: ${order.id} (${order.device_model})`;
+        openModal('techVideoModal');
+    }
+
+    function switchRole(role) { currentRole = role; document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active')); document.getElementById(`btn-${role}`).classList.add('active'); renderView(); }
+
+    function renderView() {
+        const c = document.getElementById('view-container');
+        if(currentRole === 'owner') c.innerHTML = renderOwner();
+        else if(currentRole === 'cashier') c.innerHTML = renderCashier();
+        else if(currentRole === 'driver') c.innerHTML = renderDriver();
+        else if(currentRole === 'tech') c.innerHTML = renderTech();
+    }
+
+    function renderStatCard(label, val, color) { return `<div class="bg-white/5 border border-white/5 p-6 rounded-2xl"><p class="text-xs text-gray-500 uppercase tracking-wider mb-2">${label}</p><h3 class="text-2xl font-bold ${color}">${val}</h3></div>`; }
+    
+    function renderOwner() {
+        const completed = orders.filter(o => o.status === 'COMPLETED');
+        return `<div class="mb-10"><h2 class="text-4xl font-bold mb-2">Company Overview</h2><p class="text-gray-500">Global financial metrics.</p></div>
+        <div class="grid grid-cols-3 gap-4 mb-8">
+            ${renderStatCard('Total Revenue', `$${completed.reduce((a,b) => a + b.repair_cost, 0)}`, 'text-emerald-400')}
+            ${renderStatCard('Business Profit', `$${completed.reduce((a,b) => a + b.business_cut, 0)}`, 'text-[#d4af37]')}
+            ${renderStatCard('Active Repairs', orders.filter(o => o.status !== 'COMPLETED').length, 'text-white')}
+        </div>
+        <div class="glass rounded-2xl p-6"><h3 class="text-lg font-bold mb-4">All Orders</h3>${orders.map(o => `<div class="p-3 border-b border-white/5 flex justify-between"><span>${sanitize(o.customer_name)} (${sanitize(o.device_model)})</span><span class="text-xs bg-white/5 px-2 py-1 rounded">${sanitize(o.status.replace(/_/g, ' '))}</span></div>`).join('')}</div>`;
+    }
+
+    function renderCashier() {
+        const toDriver = orders.filter(o => o.status === 'DROPPED_AT_STATION');
+        const toCust = orders.filter(o => o.status === 'READY_FOR_CUSTOMER');
+        const card = (o, txt, cls) => `<div class="bg-black/30 border border-white/10 rounded-xl p-5 flex justify-between items-center"><div><h4 class="font-semibold text-white">${sanitize(o.device_model)}</h4><p class="text-sm text-gray-500">${sanitize(o.customer_name)} • $${o.repair_cost}</p></div><button onclick="advanceOrder('${o.id}')" class="${cls} px-4 py-2 rounded-lg text-xs font-medium">${txt}</button></div>`;
+        return `<div class="flex justify-between items-end mb-10"><div><h2 class="text-4xl font-bold mb-2">Cashier Portal</h2></div><button onclick="openModal('intakeModal')" class="btn-gold px-6 py-3 rounded-xl text-sm">New Intake</button></div>
+        <div class="grid grid-cols-2 gap-6">
+            <div><h3 class="text-sm uppercase tracking-wider text-gray-400 mb-4">Hand Off to Driver</h3><div class="space-y-3">${toDriver.map(o => card(o, 'Mark Picked Up', 'bg-white/5 hover:bg-white/10 text-white border border-white/10')).join('') || '<p class="text-gray-600 text-sm italic">None waiting.</p>'}</div></div>
+            <div><h3 class="text-sm uppercase tracking-wider text-gray-400 mb-4">Customer Pickup</h3><div class="space-y-3">${toCust.map(o => card(o, 'Collect & Complete', 'btn-gold')).join('') || '<p class="text-gray-600 text-sm italic">None ready.</p>'}</div></div>
+        </div>`;
+    }
+
+    function renderDriver() {
+        const pickStation = orders.filter(o => o.status === 'DROPPED_AT_STATION');
+        const dropTech = orders.filter(o => o.status === 'DRIVER_TO_TECH');
+        const pickTech = orders.filter(o => o.status === 'REPAIR_DONE');
+        const dropStation = orders.filter(o => o.status === 'DRIVER_TO_STATION');
+
+        // Helper to generate the photo button based on state
+        const getPhotoBtn = (o, type) => {
+            const colName = `driver_${type}_img`;
+            if (o[colName]) {
+                return `<span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full border border-emerald-500/20">Photo ✓</span>`;
+            } else {
+                return `<button onclick="openPhotoModal('${o.id}', '${type}')" class="text-[10px] bg-white/5 hover:bg-white/10 text-white px-2 py-1 rounded-full border border-white/10">Take Photo</button>`;
+            }
+        };
+
+        const card = (o, type, txt) => {
+            return `
+                <div class="bg-black/30 border border-white/10 rounded-xl p-5 flex flex-col gap-4">
+                    <div class="flex justify-between items-center">
+                        <div><h4 class="font-semibold text-white">${sanitize(o.device_model)}</h4><p class="text-sm text-gray-500">${sanitize(o.customer_name)}</p></div>
+                        <button onclick="advanceOrder('${o.id}')" class="bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-lg text-xs font-medium border border-white/10">${txt}</button>
+                    </div>
+                    <div class="flex gap-2 border-t border-white/5 pt-3">
+                        ${getPhotoBtn(o, type)}
+                    </div>
+                </div>
+            `;
+        };
+
+        return `<div class="mb-10"><h2 class="text-4xl font-bold mb-2">Driver Routes</h2></div>
+        <div class="grid grid-cols-2 gap-6">
+            <div><h3 class="text-sm uppercase tracking-wider text-blue-400 mb-4">Station Pickups</h3><div class="space-y-3">${pickStation.map(o => card(o, 'station_pickup', 'Picked Up')).join('') || '<p class="text-gray-600 text-sm italic">None scheduled.</p>'}</div>
+            <h3 class="text-sm uppercase tracking-wider text-amber-400 mb-4 mt-8">Drop to Tech</h3><div class="space-y-3">${dropTech.map(o => card(o, 'tech_dropoff', 'Dropped at Tech')).join('') || '<p class="text-gray-600 text-sm italic">None.</p>'}</div></div>
+            <div><h3 class="text-sm uppercase tracking-wider text-purple-400 mb-4">Tech Pickups</h3><div class="space-y-3">${pickTech.map(o => card(o, 'tech_pickup', 'Picked Up')).join('') || '<p class="text-gray-600 text-sm italic">None ready.</p>'}</div>
+            <h3 class="text-sm uppercase tracking-wider text-emerald-400 mb-4 mt-8">Drop to Station</h3><div class="space-y-3">${dropStation.map(o => card(o, 'station_dropoff', 'Dropped at Station')).join('') || '<p class="text-gray-600 text-sm italic">None.</p>'}</div></div>
+        </div>`;
+    }
+
+    function renderTech() {
+        const inc = orders.filter(o => o.status === 'AT_TECH');
+        const rep = orders.filter(o => o.status === 'REPAIRING');
+        const card = (o, txt) => {
+            const preVidBtn = o.tech_pre_repair_video_url 
+                ? `<span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full border border-emerald-500/20">Pre-Repair ✓</span>` 
+                : `<button onclick="openTechVideoModal('${o.id}', 'pre')" class="text-[10px] bg-white/5 hover:bg-white/10 text-white px-2 py-1 rounded-full border border-white/10">Rec Pre-Repair</button>`;
+            
+            const postVidBtn = o.tech_post_repair_video_url 
+                ? `<span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full border border-emerald-500/20">Post-Repair ✓</span>` 
+                : `<button onclick="openTechVideoModal('${o.id}', 'post')" class="text-[10px] bg-white/5 hover:bg-white/10 text-white px-2 py-1 rounded-full border border-white/10">Rec Post-Repair</button>`;
+
+            return `
+                <div class="bg-black/30 border border-white/10 rounded-xl p-5 flex flex-col gap-4">
+                    <div class="flex justify-between items-center">
+                        <div><h4 class="font-semibold text-white">${sanitize(o.device_model)}</h4><p class="text-sm text-gray-500">${sanitize(o.customer_name)} • ${sanitize(o.issue)}</p></div>
+                        <button onclick="advanceOrder('${o.id}')" class="btn-gold px-4 py-2 rounded-lg text-xs font-medium">${txt}</button>
+                    </div>
+                    <div class="flex gap-2 border-t border-white/5 pt-3">
+                        ${preVidBtn}
+                        ${postVidBtn}
+                    </div>
+                </div>
+            `;
+        };
+
+        return `<div class="mb-10"><h2 class="text-4xl font-bold mb-2">Repair Queue</h2></div>
+        <div class="grid grid-cols-2 gap-6">
+            <div><h3 class="text-sm uppercase tracking-wider text-gray-400 mb-4">Incoming</h3><div class="space-y-3">${inc.map(o => card(o, 'Start Repair')).join('') || '<p class="text-gray-600 text-sm italic">Empty.</p>'}</div></div>
+            <div><h3 class="text-sm uppercase tracking-wider text-gray-400 mb-4">Repairing</h3><div class="space-y-3">${rep.map(o => card(o, 'Mark Repaired')).join('') || '<p class="text-gray-600 text-sm italic">Empty.</p>'}</div></div>
+        </div>`;
+    }
+</script>
+</body>
+</html>
