@@ -127,8 +127,8 @@ app.patch('/api/orders/:id/driver-image', (req, res) => {
 
     const column = `driver_${type}_img`;
     
-    // Using simple string replace to prevent regex syntax errors
-       const base64Data = imageBase64.split(',')[1];
+    // Using safer split to handle all browser base64 formats
+    const base64Data = imageBase64.split(',')[1];
     const fileName = `driver_${type}_${Date.now()}.png`;
     
     fs.writeFileSync(path.join(driverUploadDir, fileName), base64Data, 'base64');
@@ -142,7 +142,6 @@ app.patch('/api/orders/:id/driver-image', (req, res) => {
   }
 });
 
-// Get all orders
 // Get all orders
 app.get('/api/orders', (req, res) => {
   try {
@@ -164,7 +163,6 @@ app.post('/api/orders', (req, res) => {
     const payouts = calculatePayouts(repairCost);
     if (!payouts.isProfitable) return res.status(400).json({ error: "Repair cost too low. Minimum $50 required." });
 
-    let signatureUrl = null;
     let signatureUrl = null;
     if (signatureBase64) {
       // Safer split to handle all browser base64 formats
