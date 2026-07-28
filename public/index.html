@@ -198,6 +198,20 @@
     </div>
 </div>
 
+<!-- Evidence Viewer Modal -->
+<div id="evidenceModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+    <div class="glass rounded-3xl w-full max-w-4xl p-8 relative max-h-[90vh] flex flex-col">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h3 class="text-2xl font-bold" id="evTitle">Dispute Evidence & Audit Trail</h3>
+                <p class="text-gray-500 text-sm" id="evSubtitle">Order: ...</p>
+            </div>
+            <button onclick="closeModal('evidenceModal')" class="text-gray-500 hover:text-white text-2xl">&times;</button>
+        </div>
+        <div id="evContent" class="space-y-6 overflow-y-auto pr-4"></div>
+    </div>
+</div>
+
 <script>
     let orders = [];
     let currentRole = 'cashier';
@@ -322,7 +336,6 @@
         document.getElementById(isIntake ? 'recStatus' : 'techRecStatus').innerText = "Saving video to server...";
     }
 
- // --- REPLACE THE uploadVideo FUNCTION WITH THIS ---
     async function uploadVideo() {
         const blob = new Blob(recordedChunks, { type: 'video/webm' });
         const formData = new FormData();
@@ -330,7 +343,6 @@
 
         try {
             const res = await fetch('/api/upload-video', { method: 'POST', body: formData });
-            // Safely parse JSON, in case the server crashes and returns HTML
             const data = await res.json().catch(() => ({ success: false, error: "Server returned an invalid response (likely a crash)." }));
             
             if (data.success) {
@@ -374,7 +386,6 @@
         openModal('driverPhotoModal');
         
         try {
-            // Request back camera specifically for driver
             photoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
             document.getElementById('driverPhotoPreview').srcObject = photoStream;
             document.getElementById('driverPhotoPreview').classList.remove('hidden');
@@ -390,23 +401,17 @@
         const canvas = document.getElementById('photoCanvas');
         const ctx = canvas.getContext('2d');
         
-        // Set canvas size to match video stream
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
-        
-        // Draw video frame to canvas
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         
-        // Convert to base64
         const imageBase64 = canvas.toDataURL('image/png');
         
-        // Stop camera stream
         photoStream.getTracks().forEach(track => track.stop());
         document.getElementById('driverPhotoPreview').classList.add('hidden');
         document.getElementById('btnCapturePhoto').classList.add('hidden');
         document.getElementById('photoStatus').innerText = "Saving photo to server...";
 
-        // Upload to Server
         try {
             const res = await fetch(`/api/orders/${photoContext.orderId}/driver-image`, {
                 method: 'PATCH',
@@ -426,106 +431,13 @@
         }
     }
 
-    // --- SIGNATURE PAD LOGIC ---
-    window.onload = () => {
-        sigCanvas = document.getElementById('sigCanvas');
-        sigCtx = sigCanvas.getContext('2d');
-        sigCtx.strokeStyle = "#000"; sigCtx.lineWidth = 2;
-        sigCanvas.addEventListener('mousedown', startDraw);
-        sigCanvas.addEventListener('mousemove', draw);
-        sigCanvas.addEventListener('mouseup', () => drawing = false);
-        sigCanvas.addEventListener('mouseleave', () => drawing = false);
-        sigCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDraw(e.touches[0]); }, { passive: false });
-        sigCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e.touches[0]); }, { passive: false });
-        sigCanvas.addEventListener('touchend', () => drawing = false);
-        fetchOrders();
-    };
-
-    function getPos(e) { const r = sigCanvas.getBoundingClientRect(); return { x: (e.clientX || e.pageX) - r.left, y: (e.clientY || e.pageY) - r.top }; }
-    function startDraw(e) { drawing = true; sigCtx.beginPath(); sigCtx.moveTo(getPos(e).x, getPos(e).y); }
-    function draw(e) { if(!drawing) return; sigCtx.lineTo(getPos(e).x, getPos(e).y); sigCtx.stroke(); }
-    function clearSig() { sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height); }
-
-    // --- API CALLS ---
-    async function fetchOrders() {
-        try {
-            const res = await fetch('/api/orders');
-            if (!res.ok) throw new Error("Server returned " + res.status);
-            orders = await res.json();
-            renderView();
-        } catch (err) {
-            document.getElementById('view-container').innerText = "Error loading data from server: " + err.message;
-            console.error("Fetch error:", err);
-        }
-    }
-
-    async function advanceOrder(id) {
-        await fetch(`/api/orders/${id}/advance`, { method: 'PATCH' });
-        fetchOrders();
-    }
-
-// --- REPLACE THE intakeForm EVENT LISTENER WITH THIS ---
-    document.getElementById('intakeForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const signatureBase64 = sigCanvas.toDataURL('image/png');
-        
-        try {
-            const res = await fetch('/api/orders', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    customerName: m_customerName.value,
-                    customerPhone: m_customerPhone.value,
-                    deviceModel: m_deviceModel.value,
-                    issue: `${m_repairType.options[m_repairType.selectedIndex].text} - ${m_issue.value}`,
-                    repairCost: m_repairCost.value,
-                    signatureBase64,
-                    diagVideoUrl: uploadedVideoUrl
-                })
-            });
-
-            if(res.ok) {
-                const data = await res.json();
-                if(data.success) {
-                    closeModal('intakeModal');
-                    uploadedVideoUrl = null;
-                    fetchOrders();
-                } else {
-                    alert("Error: " + data.error);
-                }
-            } else {
-                const err = await res.json().catch(() => ({ error: "Server returned an invalid response." }));
-                alert("Error: " + err.error);
-            }
-        } catch (err) {
-            alert("Network error submitting order: " + err.message);
-        }
-    });
-
-    function openModal(id) { 
-        document.getElementById(id).classList.remove('hidden'); 
-        document.getElementById(id).classList.add('flex'); 
-        if(id === 'intakeModal') { nextStep(1); updateEstimate(); }
-    }
-    function closeModal(id) { 
-        document.getElementById(id).classList.add('hidden'); 
-        document.getElementById(id).classList.remove('flex'); 
-    }
-    
-    function openTechVideoModal(orderId, type) {
-        const order = orders.find(o => o.id === orderId);
-        if(!order) return;
-        document.getElementById('techVideoTitle').innerText = type === 'pre' ? 'Pre-Repair Video' : 'Post-Repair Video';
-        document.getElementById('techVideoSubtitle').innerText = `Order: ${order.id} (${order.device_model})`;
-        openModal('techVideoModal');
-    }
+    // --- EVIDENCE VIEWER LOGIC ---
     function openEvidenceModal(orderId) {
         const o = orders.find(o => o.id === orderId);
         if (!o) return;
 
         document.getElementById('evSubtitle').innerText = `Order: ${o.id} • Customer: ${o.customer_name}`;
 
-        // Helper to generate HTML for media
         const renderMedia = (url, type) => {
             if (!url) return `<div class="bg-black/30 border border-dashed border-white/10 rounded-xl p-4 text-center text-xs text-gray-600 italic">Not Recorded</div>`;
             if (type === 'video') return `<video src="${url}" controls class="w-full rounded-xl border border-white/10"></video>`;
@@ -591,7 +503,100 @@
         document.getElementById('evContent').innerHTML = html;
         openModal('evidenceModal');
     }
+
+    // --- SIGNATURE PAD LOGIC ---
+    window.onload = () => {
+        sigCanvas = document.getElementById('sigCanvas');
+        sigCtx = sigCanvas.getContext('2d');
+        sigCtx.strokeStyle = "#000"; sigCtx.lineWidth = 2;
+        sigCanvas.addEventListener('mousedown', startDraw);
+        sigCanvas.addEventListener('mousemove', draw);
+        sigCanvas.addEventListener('mouseup', () => drawing = false);
+        sigCanvas.addEventListener('mouseleave', () => drawing = false);
+        sigCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDraw(e.touches[0]); }, { passive: false });
+        sigCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e.touches[0]); }, { passive: false });
+        sigCanvas.addEventListener('touchend', () => drawing = false);
+        fetchOrders();
+    };
+
+    function getPos(e) { const r = sigCanvas.getBoundingClientRect(); return { x: (e.clientX || e.pageX) - r.left, y: (e.clientY || e.pageY) - r.top }; }
+    function startDraw(e) { drawing = true; sigCtx.beginPath(); sigCtx.moveTo(getPos(e).x, getPos(e).y); }
+    function draw(e) { if(!drawing) return; sigCtx.lineTo(getPos(e).x, getPos(e).y); sigCtx.stroke(); }
+    function clearSig() { sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height); }
+
+    // --- API CALLS ---
+    async function fetchOrders() {
+        try {
+            const res = await fetch('/api/orders');
+            if (!res.ok) throw new Error("Server returned " + res.status);
+            orders = await res.json();
+            renderView();
+        } catch (err) {
+            document.getElementById('view-container').innerText = "Error loading data from server: " + err.message;
+            console.error("Fetch error:", err);
+        }
+    }
+
+    async function advanceOrder(id) {
+        await fetch(`/api/orders/${id}/advance`, { method: 'PATCH' });
+        fetchOrders();
+    }
+
+    document.getElementById('intakeForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const signatureBase64 = sigCanvas.toDataURL('image/png');
+        
+        try {
+            const res = await fetch('/api/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    customerName: m_customerName.value,
+                    customerPhone: m_customerPhone.value,
+                    deviceModel: m_deviceModel.value,
+                    issue: `${m_repairType.options[m_repairType.selectedIndex].text} - ${m_issue.value}`,
+                    repairCost: m_repairCost.value,
+                    signatureBase64,
+                    diagVideoUrl: uploadedVideoUrl
+                })
+            });
+
+            if(res.ok) {
+                const data = await res.json();
+                if(data.success) {
+                    closeModal('intakeModal');
+                    uploadedVideoUrl = null;
+                    fetchOrders();
+                } else {
+                    alert("Error: " + data.error);
+                }
+            } else {
+                const err = await res.json().catch(() => ({ error: "Server returned an invalid response." }));
+                alert("Error: " + err.error);
+            }
+        } catch (err) {
+            alert("Network error submitting order: " + err.message);
+        }
+    });
+
+    function openModal(id) { 
+        document.getElementById(id).classList.remove('hidden'); 
+        document.getElementById(id).classList.add('flex'); 
+        if(id === 'intakeModal') { nextStep(1); updateEstimate(); }
+    }
+    function closeModal(id) { 
+        document.getElementById(id).classList.add('hidden'); 
+        document.getElementById(id).classList.remove('flex'); 
+    }
     
+    function openTechVideoModal(orderId, type) {
+        const order = orders.find(o => o.id === orderId);
+        if(!order) return;
+        document.getElementById('techVideoTitle').innerText = type === 'pre' ? 'Pre-Repair Video' : 'Post-Repair Video';
+        document.getElementById('techVideoSubtitle').innerText = `Order: ${order.id} (${order.device_model})`;
+        openModal('techVideoModal');
+    }
+
     function switchRole(role) { currentRole = role; document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active')); document.getElementById(`btn-${role}`).classList.add('active'); renderView(); }
 
     function renderView() {
@@ -656,7 +661,6 @@
         const pickTech = orders.filter(o => o.status === 'REPAIR_DONE');
         const dropStation = orders.filter(o => o.status === 'DRIVER_TO_STATION');
 
-        // Helper to generate the photo button based on state
         const getPhotoBtn = (o, type) => {
             const colName = `driver_${type}_img`;
             if (o[colName]) {
@@ -721,23 +725,6 @@
             <div><h3 class="text-sm uppercase tracking-wider text-gray-400 mb-4">Repairing</h3><div class="space-y-3">${rep.map(o => card(o, 'Mark Repaired')).join('') || '<p class="text-gray-600 text-sm italic">Empty.</p>'}</div></div>
         </div>`;
     }
-
-    <!-- Evidence Viewer Modal -->
-<div id="evidenceModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden items-center justify-center p-4">
-    <div class="glass rounded-3xl w-full max-w-4xl p-8 relative max-h-[90vh] flex flex-col">
-        <div class="flex justify-between items-center mb-6">
-            <div>
-                <h3 class="text-2xl font-bold" id="evTitle">Dispute Evidence & Audit Trail</h3>
-                <p class="text-gray-500 text-sm" id="evSubtitle">Order: ...</p>
-            </div>
-            <button onclick="closeModal('evidenceModal')" class="text-gray-500 hover:text-white text-2xl">&times;</button>
-        </div>
-        
-        <div id="evContent" class="space-y-6 overflow-y-auto pr-4">
-            <!-- Populated by JS -->
-        </div>
-    </div>
-</div>
 </script>
 </body>
 </html>
