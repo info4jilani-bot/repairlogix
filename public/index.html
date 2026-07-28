@@ -15,8 +15,6 @@
         .btn-gold { background: linear-gradient(180deg, #e6c757 0%, #d4af37 100%); color: #000; font-weight: 600; transition: all 0.3s; }
         .btn-gold:hover { transform: translateY(-1px); }
         .btn-ghost { border: 1px solid rgba(255,255,255,0.1); color: #a1a1aa; }
-        .role-btn { transition: all 0.3s ease; border: 1px solid transparent; }
-        .role-btn.active { background: rgba(212, 175, 55, 0.1); border-color: rgba(212, 175, 55, 0.3); color: #d4af37; }
         #sigCanvas { background: #fff; border-radius: 12px; cursor: crosshair; width: 100%; height: 150px; touch-action: none; }
         select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23d4af37'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1.25em; padding-right: 2.5rem; }
         .step-active { background-color: var(--accent-gold); color: #000; border-color: var(--accent-gold) !important; }
@@ -27,50 +25,63 @@
 </head>
 <body class="flex">
 
-<!-- Mobile Hamburger Menu Button -->
-<button onclick="toggleSidebar()" class="md:hidden fixed top-4 left-4 z-50 glass p-2 rounded-xl text-white">
-    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-</button>
-
-<!-- Mobile Overlay -->
-<div id="sidebarOverlay" onclick="toggleSidebar()" class="md:hidden fixed inset-0 bg-black/50 z-30 hidden"></div>
-
-<!-- Sidebar -->
-<aside id="sidebar" class="w-64 bg-black/20 backdrop-blur-xl border-r border-white/5 flex flex-col fixed h-full z-40 transition-transform duration-300 -translate-x-full md:translate-x-0">
-    <div class="p-6 border-b border-white/5">
-        <div class="flex items-center gap-3">
-            <div class="w-9 h-9 bg-gradient-to-br from-[#d4af37] to-[#8a7028] rounded-lg flex items-center justify-center shadow-lg rotate-45">
-                <div class="w-4 h-4 bg-[#08090a] rounded-sm -rotate-45 flex items-center justify-center"><div class="w-2 h-2 bg-[#d4af37] rounded-full"></div></div>
-            </div>
-            <div>
-                <h1 class="text-xl font-bold tracking-tight">Repair<span class="text-[#d4af37]">Logix</span></h1>
-                <p class="text-[10px] uppercase tracking-[0.2em] text-gray-500 -mt-1">Enterprise Portal</p>
+<!-- LOGIN VIEW -->
+<div id="loginView" class="fixed inset-0 flex items-center justify-center p-4 z-50">
+    <div class="glass rounded-3xl p-8 w-full max-w-md text-center">
+        <div class="flex justify-center mb-6">
+            <div class="w-12 h-12 bg-gradient-to-br from-[#d4af37] to-[#8a7028] rounded-xl flex items-center justify-center shadow-lg rotate-45">
+                <div class="w-6 h-6 bg-[#08090a] rounded-sm -rotate-45 flex items-center justify-center"><div class="w-3 h-3 bg-[#d4af37] rounded-full"></div></div>
             </div>
         </div>
+        <h1 class="text-3xl font-bold mb-2">Repair<span class="text-[#d4af37]">Logix</span></h1>
+        <p class="text-gray-500 mb-8 text-sm uppercase tracking-widest">Enterprise Portal Login</p>
+        
+        <form id="loginForm" class="space-y-4 text-left">
+            <div><label class="block text-xs uppercase tracking-wider text-gray-500 mb-2">Username</label><input type="text" id="username" required class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#d4af37]"></div>
+            <div><label class="block text-xs uppercase tracking-wider text-gray-500 mb-2">Password</label><input type="password" id="password" required class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#d4af37]"></div>
+            <div id="loginError" class="text-red-400 text-sm hidden"></div>
+            <button type="submit" class="btn-gold w-full py-3 rounded-xl font-semibold">Sign In</button>
+        </form>
+        <div class="mt-6 text-xs text-gray-600 bg-black/20 p-4 rounded-xl text-left">
+            <p class="font-bold text-gray-400 mb-2">Default Accounts (Demo):</p>
+            <p>Owner: <span class="text-[#d4af37]">owner / owner123</span></p>
+            <p>Cashier: <span class="text-[#d4af37]">cashier / cashier123</span></p>
+            <p>Driver: <span class="text-[#d4af37]">driver / driver123</span></p>
+            <p>Tech: <span class="text-[#d4af37]">tech / tech123</span></p>
+        </div>
     </div>
-    <div class="p-4 flex-1 overflow-y-auto">
-        <p class="text-[10px] uppercase tracking-widest text-gray-600 mb-3 px-2">Switch Role View</p>
-        <nav class="space-y-1">
-            <button onclick="switchRole('owner')" id="btn-owner" class="role-btn w-full text-left px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white flex items-center gap-3">Company Owner</button>
-            <button onclick="switchRole('cashier')" id="btn-cashier" class="role-btn active w-full text-left px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white flex items-center gap-3">Cashier Intake</button>
-            <button onclick="switchRole('driver')" id="btn-driver" class="role-btn w-full text-left px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white flex items-center gap-3">Logistics Driver</button>
-            <button onclick="switchRole('tech')" id="btn-tech" class="role-btn w-full text-left px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white flex items-center gap-3">Repair Technician</button>
-        </nav>
-    </div>
-</aside>
+</div>
 
-<!-- Main Content -->
-<main class="flex-1 md:ml-64 p-4 md:p-10 w-full pt-20 md:pt-10">
-    <div id="view-container">Loading...</div>
-</main>
+<!-- MAIN APP VIEW -->
+<div id="appView" class="hidden w-full">
+    <!-- Top Bar -->
+    <header class="glass border-b border-white/5 sticky top-0 z-30">
+        <div class="max-w-[1600px] mx-auto px-4 md:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 bg-gradient-to-br from-[#d4af37] to-[#8a7028] rounded-lg flex items-center justify-center shadow-lg rotate-45">
+                    <div class="w-4 h-4 bg-[#08090a] rounded-sm -rotate-45 flex items-center justify-center"><div class="w-2 h-2 bg-[#d4af37] rounded-full"></div></div>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight">Repair<span class="text-[#d4af37]">Logix</span></h1>
+                    <p class="text-[10px] uppercase tracking-[0.2em] text-gray-500 -mt-1" id="userRoleDisplay">Portal</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <span class="text-sm text-gray-400 hidden sm:inline">Welcome, <span class="text-white font-medium" id="userNameDisplay">User</span></span>
+                <button onclick="logout()" class="text-xs bg-red-500/10 text-red-400 border border-red-500/20 px-4 py-2 rounded-lg hover:bg-red-500/20 transition">Logout</button>
+            </div>
+        </div>
+    </header>
 
-<!-- Cashier Intake Modal -->
+    <main class="max-w-[1600px] mx-auto p-4 md:p-8">
+        <div id="view-container">Loading...</div>
+    </main>
+</div>
+
+<!-- Modals (Same as before) -->
 <div id="intakeModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden items-center justify-center p-4">
     <div class="glass rounded-3xl w-full max-w-2xl p-4 md:p-8 relative max-h-[95vh] flex flex-col">
-        <div class="flex justify-between items-center mb-6">
-            <h3 class="text-xl md:text-2xl font-bold">New Device Intake</h3>
-            <button onclick="closeModal('intakeModal')" class="text-gray-500 hover:text-white text-2xl">&times;</button>
-        </div>
+        <div class="flex justify-between items-center mb-6"><h3 class="text-xl md:text-2xl font-bold">New Device Intake</h3><button onclick="closeModal('intakeModal')" class="text-gray-500 hover:text-white text-2xl">&times;</button></div>
         <div class="flex items-center justify-center gap-2 md:gap-4 mb-6 text-xs md:text-sm">
             <div class="flex items-center gap-1 md:gap-2"><div id="step-dot-1" class="step-active w-6 h-6 md:w-8 md:h-8 rounded-full border border-white/10 flex items-center justify-center text-xs md:text-sm font-semibold">1</div><span class="hidden sm:inline font-medium text-white">Details</span></div>
             <div class="w-4 md:w-8 h-px bg-white/10"></div>
@@ -87,138 +98,82 @@
                 <div class="bg-black/30 border border-[#d4af37]/20 rounded-xl p-4 space-y-4">
                     <h4 class="text-xs uppercase tracking-wider text-[#d4af37]">Itemized Estimate Engine</h4>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs uppercase tracking-wider text-gray-500 mb-2">Device Model</label>
+                        <div><label class="block text-xs uppercase tracking-wider text-gray-500 mb-2">Device Model</label>
                             <select id="m_deviceModel" onchange="updateEstimate()" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#d4af37]">
-                                <optgroup label="Apple Devices">
-                                    <option value="iPhone 17 Pro Max">iPhone 17 Pro Max</option><option value="iPhone 17 Pro">iPhone 17 Pro</option><option value="iPhone 17">iPhone 17</option>
-                                    <option value="iPhone 16 Pro Max">iPhone 16 Pro Max</option><option value="iPhone 16 Pro">iPhone 16 Pro</option><option value="iPhone 16 Plus">iPhone 16 Plus</option><option value="iPhone 16">iPhone 16</option>
-                                    <option value="iPhone 15 Pro Max">iPhone 15 Pro Max</option><option value="iPhone 15 Pro">iPhone 15 Pro</option><option value="iPhone 15 Plus">iPhone 15 Plus</option><option value="iPhone 15">iPhone 15</option>
-                                    <option value="iPhone 14 Pro Max">iPhone 14 Pro Max</option><option value="iPhone 14 Pro">iPhone 14 Pro</option><option value="iPhone 14 Plus">iPhone 14 Plus</option><option value="iPhone 14">iPhone 14</option>
-                                    <option value="iPhone 13 Pro Max">iPhone 13 Pro Max</option><option value="iPhone 13 Pro">iPhone 13 Pro</option><option value="iPhone 13">iPhone 13</option><option value="iPhone SE (3rd Gen)">iPhone SE (3rd Gen)</option>
-                                </optgroup>
-                                <optgroup label="Samsung Devices">
-                                    <option value="Galaxy S26 Ultra">Galaxy S26 Ultra</option><option value="Galaxy S26+">Galaxy S26+</option><option value="Galaxy S26">Galaxy S26</option>
-                                    <option value="Galaxy S25 Ultra">Galaxy S25 Ultra</option><option value="Galaxy S25+">Galaxy S25+</option><option value="Galaxy S25">Galaxy S25</option>
-                                    <option value="Galaxy Z Fold6">Galaxy Z Fold6</option><option value="Galaxy Z Flip6">Galaxy Z Flip6</option><option value="Galaxy S24 FE">Galaxy S24 FE</option><option value="Galaxy A55">Galaxy A55</option>
-                                </optgroup>
+                                <optgroup label="Apple Devices"><option>iPhone 17 Pro Max</option><option>iPhone 17 Pro</option><option>iPhone 17</option><option>iPhone 16 Pro Max</option><option>iPhone 16 Pro</option><option>iPhone 16 Plus</option><option>iPhone 16</option><option>iPhone 15 Pro Max</option><option>iPhone 15 Pro</option><option>iPhone 15 Plus</option><option>iPhone 15</option><option>iPhone 14 Pro Max</option><option>iPhone 14 Pro</option><option>iPhone 14 Plus</option><option>iPhone 14</option><option>iPhone 13 Pro Max</option><option>iPhone 13 Pro</option><option>iPhone 13</option><option>iPhone SE (3rd Gen)</option></optgroup>
+                                <optgroup label="Samsung Devices"><option>Galaxy S26 Ultra</option><option>Galaxy S26+</option><option>Galaxy S26</option><option>Galaxy S25 Ultra</option><option>Galaxy S25+</option><option>Galaxy S25</option><option>Galaxy Z Fold6</option><option>Galaxy Z Flip6</option><option>Galaxy S24 FE</option><option>Galaxy A55</option></optgroup>
                             </select>
                         </div>
-                        <div>
-                            <label class="block text-xs uppercase tracking-wider text-gray-500 mb-2">Repair Type</label>
+                        <div><label class="block text-xs uppercase tracking-wider text-gray-500 mb-2">Repair Type</label>
                             <select id="m_repairType" onchange="updateEstimate()" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#d4af37]">
-                                <option value="screen">Screen Only / Module</option><option value="battery">Standalone Battery</option><option value="back_glass">Back Glass Only</option>
-                                <option value="rear_cam">Rear Camera Module</option><option value="full_device">Full Device / "Other Damage"</option>
+                                <option value="screen">Screen Only / Module</option><option value="battery">Standalone Battery</option><option value="back_glass">Back Glass Only</option><option value="rear_cam">Rear Camera Module</option><option value="full_device">Full Device / Other Damage</option>
                             </select>
                         </div>
                     </div>
-                    <div>
-                        <label class="block text-xs uppercase tracking-wider text-gray-500 mb-2">Auto-Calc Repair Cost ($)</label>
-                        <input type="number" id="m_repairCost" value="379" min="30" max="1000" required class="w-full bg-transparent text-3xl font-bold text-[#d4af37] outline-none border-b border-[#d4af37]/30 focus:border-[#d4af37] pb-1">
-                    </div>
+                    <div><label class="block text-xs uppercase tracking-wider text-gray-500 mb-2">Auto-Calc Repair Cost ($)</label><input type="number" id="m_repairCost" value="379" min="30" max="1000" required class="w-full bg-transparent text-3xl font-bold text-[#d4af37] outline-none border-b border-[#d4af37]/30 focus:border-[#d4af37] pb-1"></div>
                 </div>
-                <div><label class="block text-xs uppercase tracking-wider text-gray-500 mb-2">Specific Issue / Notes</label><textarea id="m_issue" required rows="2" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#d4af37]" placeholder="e.g., Severe shatter, original parts, etc."></textarea></div>
+                <div><label class="block text-xs uppercase tracking-wider text-gray-500 mb-2">Specific Issue / Notes</label><textarea id="m_issue" required rows="2" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#d4af37]" placeholder="e.g., Severe shatter"></textarea></div>
                 <button type="button" onclick="nextStep(2)" class="btn-gold w-full py-3 rounded-xl font-semibold">Continue to Diagnostic →</button>
             </div>
             <div id="wizard-step-2" class="hidden space-y-4">
-                <p class="text-gray-400 text-sm">Record a video demonstrating the device's condition (screen, touch, cameras, ports) to protect against future disputes.</p>
+                <p class="text-gray-400 text-sm">Record a video demonstrating the device's condition.</p>
                 <div class="bg-black/40 rounded-xl p-4 flex flex-col items-center justify-center space-y-3 border border-white/10">
                     <video id="diagVideoPreview" autoplay muted playsinline class="w-full max-w-md rounded-lg border border-white/10 hidden"></video>
                     <div id="recStatus" class="text-xs text-gray-500">Camera offline</div>
                     <div class="flex flex-wrap gap-2 justify-center">
                         <button type="button" id="btnStartCam" onclick="startCamera('intake')" class="bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-lg text-xs border border-white/10">Start Camera</button>
-                        <button type="button" id="btnRec" onclick="startRecording()" class="bg-red-600/80 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-xs hidden items-center gap-2">
-                            <span class="w-2 h-2 bg-white rounded-full rec-dot"></span> Record
-                        </button>
+                        <button type="button" id="btnRec" onclick="startRecording()" class="bg-red-600/80 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-xs hidden items-center gap-2"><span class="w-2 h-2 bg-white rounded-full rec-dot"></span> Record</button>
                         <button type="button" id="btnStop" onclick="stopRecording()" class="bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded-lg text-xs hidden">Stop & Save</button>
                     </div>
                 </div>
-                <div class="flex gap-3 pt-2">
-                    <button type="button" onclick="nextStep(1)" class="btn-ghost flex-1 py-3 rounded-xl text-sm">Back</button>
-                    <button type="button" onclick="nextStep(3)" class="btn-gold flex-1 py-3 rounded-xl text-sm">Continue →</button>
-                </div>
+                <div class="flex gap-3 pt-2"><button type="button" onclick="nextStep(1)" class="btn-ghost flex-1 py-3 rounded-xl text-sm">Back</button><button type="button" onclick="nextStep(3)" class="btn-gold flex-1 py-3 rounded-xl text-sm">Continue →</button></div>
             </div>
             <div id="wizard-step-3" class="hidden space-y-4">
-                <div class="bg-black/30 border border-white/10 rounded-xl p-4 flex justify-between items-center">
-                    <span class="text-sm text-gray-400">Final Estimate:</span>
-                    <span class="text-2xl font-bold text-[#d4af37]">$<span id="finalPriceDisplay">379</span></span>
-                </div>
-                <div>
-                    <label class="block text-xs uppercase tracking-wider text-gray-500 mb-2 text-center">Customer Digital Signature</label>
-                    <canvas id="sigCanvas" width="600" height="150"></canvas>
-                    <button type="button" onclick="clearSig()" class="text-xs text-gray-500 mt-2 hover:text-white">Clear Signature</button>
-                </div>
-                <div class="flex gap-3 pt-2">
-                    <button type="button" onclick="nextStep(2)" class="btn-ghost flex-1 py-3 rounded-xl text-sm">Back</button>
-                    <button type="submit" class="btn-gold flex-1 py-3 rounded-xl text-sm">Push to Dispatch</button>
-                </div>
+                <div class="bg-black/30 border border-white/10 rounded-xl p-4 flex justify-between items-center"><span class="text-sm text-gray-400">Final Estimate:</span><span class="text-2xl font-bold text-[#d4af37]">$<span id="finalPriceDisplay">379</span></span></div>
+                <div><label class="block text-xs uppercase tracking-wider text-gray-500 mb-2 text-center">Customer Digital Signature</label><canvas id="sigCanvas" width="600" height="150"></canvas><button type="button" onclick="clearSig()" class="text-xs text-gray-500 mt-2 hover:text-white">Clear Signature</button></div>
+                <div class="flex gap-3 pt-2"><button type="button" onclick="nextStep(2)" class="btn-ghost flex-1 py-3 rounded-xl text-sm">Back</button><button type="submit" class="btn-gold flex-1 py-3 rounded-xl text-sm">Push to Dispatch</button></div>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Technician Video Modal -->
 <div id="techVideoModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden items-center justify-center p-4">
     <div class="glass rounded-3xl w-full max-w-2xl p-4 md:p-8 relative max-h-[95vh] flex flex-col">
-        <div class="flex justify-between items-center mb-6">
-            <div>
-                <h3 class="text-xl md:text-2xl font-bold" id="techVideoTitle">Tech Video Recorder</h3>
-                <p class="text-gray-500 text-sm" id="techVideoSubtitle">Order: ...</p>
-            </div>
-            <button onclick="closeModal('techVideoModal')" class="text-gray-500 hover:text-white text-2xl">&times;</button>
-        </div>
+        <div class="flex justify-between items-center mb-6"><div><h3 class="text-xl md:text-2xl font-bold" id="techVideoTitle">Tech Video Recorder</h3><p class="text-gray-500 text-sm" id="techVideoSubtitle">Order: ...</p></div><button onclick="closeModal('techVideoModal')" class="text-gray-500 hover:text-white text-2xl">&times;</button></div>
         <div class="bg-black/40 rounded-xl p-4 flex flex-col items-center justify-center space-y-3 border border-white/10 flex-1">
             <video id="techVideoPreview" autoplay muted playsinline class="w-full max-w-md rounded-lg border border-white/10 hidden"></video>
             <div id="techRecStatus" class="text-xs text-gray-500">Camera offline</div>
             <div class="flex flex-wrap gap-2 justify-center">
                 <button type="button" id="btnTechStartCam" onclick="startCamera('tech', activeTechOrderId, activeTechType)" class="bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-lg text-xs border border-white/10">Start Camera</button>
-                <button type="button" id="btnTechRec" onclick="startRecording()" class="bg-red-600/80 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-xs hidden items-center gap-2">
-                    <span class="w-2 h-2 bg-white rounded-full rec-dot"></span> Record
-                </button>
+                <button type="button" id="btnTechRec" onclick="startRecording()" class="bg-red-600/80 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-xs hidden items-center gap-2"><span class="w-2 h-2 bg-white rounded-full rec-dot"></span> Record</button>
                 <button type="button" id="btnTechStop" onclick="stopRecording()" class="bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded-lg text-xs hidden">Stop & Save</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Driver Photo Modal -->
 <div id="driverPhotoModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden items-center justify-center p-4">
     <div class="glass rounded-3xl w-full max-w-2xl p-4 md:p-8 relative max-h-[95vh] flex flex-col">
-        <div class="flex justify-between items-center mb-6">
-            <div>
-                <h3 class="text-xl md:text-2xl font-bold">Driver Photo Capture</h3>
-                <p class="text-gray-500 text-sm" id="photoSubtitle">Take a picture of the device</p>
-            </div>
-            <button onclick="closeModal('driverPhotoModal')" class="text-gray-500 hover:text-white text-2xl">&times;</button>
-        </div>
+        <div class="flex justify-between items-center mb-6"><div><h3 class="text-xl md:text-2xl font-bold">Driver Photo Capture</h3><p class="text-gray-500 text-sm" id="photoSubtitle">Take a picture</p></div><button onclick="closeModal('driverPhotoModal')" class="text-gray-500 hover:text-white text-2xl">&times;</button></div>
         <div class="bg-black/40 rounded-xl p-4 flex flex-col items-center justify-center space-y-3 border border-white/10 flex-1">
             <video id="driverPhotoPreview" autoplay muted playsinline class="w-full max-w-md rounded-lg border border-white/10 hidden"></video>
             <canvas id="photoCanvas" class="hidden"></canvas>
             <div id="photoStatus" class="text-xs text-gray-500">Initializing camera...</div>
-            <div class="flex gap-3">
-                <button type="button" id="btnCapturePhoto" onclick="capturePhoto()" class="btn-gold px-6 py-2 rounded-lg text-xs hidden">Capture Photo</button>
-            </div>
+            <button type="button" id="btnCapturePhoto" onclick="capturePhoto()" class="btn-gold px-6 py-2 rounded-lg text-xs hidden">Capture Photo</button>
         </div>
     </div>
 </div>
 
-<!-- Evidence Viewer Modal -->
 <div id="evidenceModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden items-center justify-center p-4">
     <div class="glass rounded-3xl w-full max-w-4xl p-4 md:p-8 relative max-h-[95vh] flex flex-col">
-        <div class="flex justify-between items-center mb-6">
-            <div>
-                <h3 class="text-xl md:text-2xl font-bold">Dispute Evidence & Audit Trail</h3>
-                <p class="text-gray-500 text-sm" id="evSubtitle">Order: ...</p>
-            </div>
-            <button onclick="closeModal('evidenceModal')" class="text-gray-500 hover:text-white text-2xl">&times;</button>
-        </div>
+        <div class="flex justify-between items-center mb-6"><div><h3 class="text-xl md:text-2xl font-bold">Dispute Evidence & Audit Trail</h3><p class="text-gray-500 text-sm" id="evSubtitle">Order: ...</p></div><button onclick="closeModal('evidenceModal')" class="text-gray-500 hover:text-white text-2xl">&times;</button></div>
         <div id="evContent" class="space-y-6 overflow-y-auto pr-2 flex-1"></div>
     </div>
 </div>
 
 <script>
     let orders = [];
-    let currentRole = 'cashier';
+    let currentUser = null;
     let sigCanvas, sigCtx, drawing = false;
     let mediaRecorder, recordedChunks = [];
     let uploadedVideoUrl = null;
@@ -254,32 +209,93 @@
         "Galaxy S25 Ultra": { screen: 259, battery: 99, back_glass: 109, rear_cam: 219, full_device: 549 },
         "Galaxy S25+": { screen: 199, battery: 99, back_glass: 89, rear_cam: 140, full_device: 449 },
         "Galaxy S25": { screen: 174, battery: 79, back_glass: 69, rear_cam: 120, full_device: 399 },
-        "Galaxy Z Fold6": { screen: 549, battery: 109, back_glass: 149, rear_cam: 199, full_device: 699, note: "Screen price is for Inner Screen. Outer Screen is $199. Adjust manually if repairing outer only." },
-        "Galaxy Z Flip6": { screen: 399, battery: 99, back_glass: 99, rear_cam: 149, full_device: 599, note: "Screen price is for Inner Screen. Outer Screen is $129. Adjust manually if repairing outer only." },
+        "Galaxy Z Fold6": { screen: 549, battery: 109, back_glass: 149, rear_cam: 199, full_device: 699 },
+        "Galaxy Z Flip6": { screen: 399, battery: 99, back_glass: 99, rear_cam: 149, full_device: 599 },
         "Galaxy S24 FE": { screen: 160, battery: 79, back_glass: 69, rear_cam: 99, full_device: 349 },
         "Galaxy A55": { screen: 129, battery: 69, back_glass: 59, rear_cam: 89, full_device: 199 }
     };
 
-    function toggleSidebar() {
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('sidebarOverlay');
-        sidebar.classList.toggle('-translate-x-full');
-        overlay.classList.toggle('hidden');
+    // --- AUTHENTICATION LOGIC ---
+    window.onload = async () => {
+        sigCanvas = document.getElementById('sigCanvas');
+        sigCtx = sigCanvas.getContext('2d');
+        sigCtx.strokeStyle = "#000"; sigCtx.lineWidth = 2;
+        sigCanvas.addEventListener('mousedown', startDraw);
+        sigCanvas.addEventListener('mousemove', draw);
+        sigCanvas.addEventListener('mouseup', () => drawing = false);
+        sigCanvas.addEventListener('mouseleave', () => drawing = false);
+        sigCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDraw(e.touches[0]); }, { passive: false });
+        sigCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e.touches[0]); }, { passive: false });
+        sigCanvas.addEventListener('touchend', () => drawing = false);
+
+        await checkAuth();
+    };
+
+    async function checkAuth() {
+        try {
+            const res = await fetch('/api/auth/me');
+            if (res.ok) {
+                const data = await res.json();
+                currentUser = data.user;
+                showApp();
+            } else {
+                showLogin();
+            }
+        } catch (err) {
+            showLogin();
+        }
     }
 
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: username.value, password: password.value })
+        });
+        if (res.ok) {
+            const data = await res.json();
+            currentUser = data.user;
+            showApp();
+        } else {
+            const err = await res.json();
+            document.getElementById('loginError').innerText = err.error;
+            document.getElementById('loginError').classList.remove('hidden');
+        }
+    });
+
+    async function logout() {
+        await fetch('/api/auth/logout', { method: 'POST' });
+        currentUser = null;
+        showLogin();
+    }
+
+    function showLogin() {
+        document.getElementById('loginView').classList.remove('hidden');
+        document.getElementById('appView').classList.add('hidden');
+    }
+
+    function showApp() {
+        document.getElementById('loginView').classList.add('hidden');
+        document.getElementById('appView').classList.remove('hidden');
+        document.getElementById('userNameDisplay').innerText = currentUser.username;
+        document.getElementById('userRoleDisplay').innerText = currentUser.role.toUpperCase() + ' PORTAL';
+        fetchOrders();
+    }
+
+    // --- HELPER FUNCTIONS ---
     function updateEstimate() {
         const model = document.getElementById('m_deviceModel').value;
         const type = document.getElementById('m_repairType').value;
         const device = PRICING_MATRIX[model];
         if (!device) return;
         if (type === 'back_glass' && device.back_glass === null) {
-            alert("Back glass repair for this model is not available standalone. It requires a Full Device enclosure replacement. Switching to 'Full Device' pricing.");
+            alert("Back glass requires Full Device enclosure replacement.");
             document.getElementById('m_repairType').value = 'full_device';
             document.getElementById('m_repairCost').value = device.full_device;
             return;
         }
         document.getElementById('m_repairCost').value = device[type];
-        if (type === 'screen' && device.note) alert(device.note);
     }
 
     function sanitize(str) {
@@ -296,12 +312,10 @@
         document.getElementById(`wizard-step-${step}`).classList.remove('hidden');
         for (let i = 1; i <= 3; i++) {
             const dot = document.getElementById(`step-dot-${i}`);
-            const text = document.getElementById(`step-text-${i}`);
             dot.classList.remove('step-active', 'step-completed');
             dot.classList.add('text-gray-500');
-            if(text) text.classList.add('text-gray-500'); if(text) text.classList.remove('text-white');
-            if (i < step) { dot.classList.add('step-completed'); dot.innerHTML = `✓`; if(text) text.classList.remove('text-gray-500'); if(text) text.classList.add('text-white'); }
-            else if (i === step) { dot.classList.add('step-active'); dot.innerText = i; if(text) text.classList.remove('text-gray-500'); if(text) text.classList.add('text-white'); }
+            if (i < step) { dot.classList.add('step-completed'); dot.innerHTML = `✓`; }
+            else if (i === step) { dot.classList.add('step-active'); dot.innerText = i; }
             else { dot.innerText = i; }
         }
         if (step === 3) document.getElementById('finalPriceDisplay').innerText = document.getElementById('m_repairCost').value;
@@ -316,16 +330,13 @@
             const btnStart = mode === 'intake' ? 'btnStartCam' : 'btnTechStartCam';
             const btnRec = mode === 'intake' ? 'btnRec' : 'btnTechRec';
             const statusEl = mode === 'intake' ? 'recStatus' : 'techRecStatus';
-            
             document.getElementById(videoEl).srcObject = videoStream;
             document.getElementById(videoEl).classList.remove('hidden');
             document.getElementById(btnStart).classList.add('hidden');
             document.getElementById(btnRec).classList.remove('hidden');
             document.getElementById(btnRec).classList.add('flex');
-            document.getElementById(statusEl).innerText = "Camera ready. Click Record to begin.";
-        } catch (err) {
-            alert("Camera access denied or not available. Please ensure you are on HTTPS and allow camera permissions.");
-        }
+            document.getElementById(statusEl).innerText = "Camera ready.";
+        } catch (err) { alert("Camera access denied."); }
     }
 
     function startRecording() {
@@ -334,195 +345,101 @@
         mediaRecorder.ondataavailable = (e) => e.data.size > 0 && recordedChunks.push(e.data);
         mediaRecorder.onstop = uploadVideo;
         mediaRecorder.start();
-        
         const isIntake = videoContext.mode === 'intake';
         document.getElementById(isIntake ? 'btnRec' : 'btnTechRec').classList.add('hidden');
         document.getElementById(isIntake ? 'btnStop' : 'btnTechStop').classList.remove('hidden');
-        document.getElementById(isIntake ? 'recStatus' : 'techRecStatus').innerHTML = '<span class="text-red-500 font-bold flex items-center gap-1"><span class="w-2 h-2 bg-red-500 rounded-full rec-dot"></span> RECORDING...</span>';
     }
 
     function stopRecording() {
         mediaRecorder.stop();
         const isIntake = videoContext.mode === 'intake';
         document.getElementById(isIntake ? 'btnStop' : 'btnTechStop').classList.add('hidden');
-        document.getElementById(isIntake ? 'recStatus' : 'techRecStatus').innerText = "Saving video to server...";
     }
 
     async function uploadVideo() {
         const blob = new Blob(recordedChunks, { type: 'video/webm' });
         const formData = new FormData();
         formData.append('video', blob, 'diagnostic.webm');
-
         try {
             const res = await fetch('/api/upload-video', { method: 'POST', body: formData });
-            const data = await res.json().catch(() => ({ success: false, error: "Server returned an invalid response." }));
-            
+            const data = await res.json();
             if (data.success) {
                 const isIntake = videoContext.mode === 'intake';
                 videoStream.getTracks().forEach(track => track.stop());
-
                 if (isIntake) {
                     uploadedVideoUrl = data.videoUrl;
-                    document.getElementById('recStatus').innerHTML = '<span class="text-emerald-400 font-bold">✓ Video Saved!</span>';
                     document.getElementById('btnRec').classList.remove('hidden');
                 } else {
                     await fetch(`/api/orders/${videoContext.orderId}/tech-video`, {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
+                        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ type: videoContext.type, videoUrl: data.videoUrl })
                     });
-                    document.getElementById('techRecStatus').innerHTML = '<span class="text-emerald-400 font-bold">✓ Video Saved!</span>';
-                    document.getElementById('btnTechRec').classList.add('hidden');
                     document.getElementById('btnTechStartCam').classList.remove('hidden');
                     document.getElementById('techVideoPreview').classList.add('hidden');
                     fetchOrders(); 
                 }
-            } else {
-                alert("Upload failed: " + data.error);
             }
-        } catch (err) {
-            alert("Network error uploading video: " + err.message);
-        }
+        } catch (err) { alert("Upload failed."); }
     }
 
     async function openPhotoModal(orderId, type) {
         photoContext = { orderId, type };
-        const typeMap = {
-            station_pickup: "Pickup from Gas Station",
-            tech_dropoff: "Drop-off at Tech Lab",
-            tech_pickup: "Pickup from Tech Lab",
-            station_dropoff: "Drop-off at Gas Station"
-        };
-        document.getElementById('photoSubtitle').innerText = `Action: ${typeMap[type]}`;
         openModal('driverPhotoModal');
-        
         try {
             photoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
             document.getElementById('driverPhotoPreview').srcObject = photoStream;
             document.getElementById('driverPhotoPreview').classList.remove('hidden');
             document.getElementById('btnCapturePhoto').classList.remove('hidden');
-            document.getElementById('photoStatus').innerText = "Camera ready. Position device and click Capture.";
-        } catch (err) {
-            document.getElementById('photoStatus').innerText = "Camera access denied.";
-        }
+        } catch (err) { alert("Camera access denied."); }
     }
 
     async function capturePhoto() {
         const video = document.getElementById('driverPhotoPreview');
         const canvas = document.getElementById('photoCanvas');
-        const ctx = canvas.getContext('2d');
-        
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
+        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
         const imageBase64 = canvas.toDataURL('image/png');
-        
         photoStream.getTracks().forEach(track => track.stop());
-        document.getElementById('driverPhotoPreview').classList.add('hidden');
-        document.getElementById('btnCapturePhoto').classList.add('hidden');
-        document.getElementById('photoStatus').innerText = "Saving photo to server...";
-
         try {
-            const res = await fetch(`/api/orders/${photoContext.orderId}/driver-image`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
+            await fetch(`/api/orders/${photoContext.orderId}/driver-image`, {
+                method: 'PATCH', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ type: photoContext.type, imageBase64 })
             });
-            const data = await res.json();
-            if (data.success) {
-                document.getElementById('photoStatus').innerHTML = '<span class="text-emerald-400 font-bold">✓ Photo Saved!</span>';
-                setTimeout(() => {
-                    closeModal('driverPhotoModal');
-                    fetchOrders();
-                }, 1000);
-            }
-        } catch (err) {
-            document.getElementById('photoStatus').innerText = "Failed to save photo.";
-        }
+            closeModal('driverPhotoModal');
+            fetchOrders();
+        } catch (err) { alert("Failed to save photo."); }
     }
 
     function openEvidenceModal(orderId) {
         const o = orders.find(o => o.id === orderId);
         if (!o) return;
-
         document.getElementById('evSubtitle').innerText = `Order: ${o.id} • Customer: ${o.customer_name}`;
-
         const renderMedia = (url, type) => {
             if (!url) return `<div class="bg-black/30 border border-dashed border-white/10 rounded-xl p-4 text-center text-xs text-gray-600 italic">Not Recorded</div>`;
             if (type === 'video') return `<video src="${url}" controls class="w-full rounded-xl border border-white/10"></video>`;
             if (type === 'img') return `<img src="${url}" class="w-full rounded-xl border border-white/10">`;
-            return `<div class="bg-black/30 border border-dashed border-white/10 rounded-xl p-4 text-center text-xs text-gray-600 italic">Not Recorded</div>`;
         };
-
-        const dateStr = new Date(o.created_at).toLocaleString();
-
         const html = `
-            <div class="bg-[#d4af37]/10 border border-[#d4af37]/20 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-center gap-2">
-                <div>
-                    <p class="text-xs uppercase tracking-wider text-[#d4af37]">Drop-off Timestamp</p>
-                    <p class="text-white font-bold">${dateStr}</p>
-                </div>
-                <div class="sm:text-right">
-                    <p class="text-xs uppercase tracking-wider text-[#d4af37]">Final Repair Cost</p>
-                    <p class="text-white font-bold">$${o.repair_cost}</p>
-                </div>
+            <div class="bg-[#d4af37]/10 border border-[#d4af37]/20 rounded-xl p-4 flex justify-between items-center">
+                <div><p class="text-xs text-[#d4af37]">Drop-off</p><p class="text-white font-bold">${new Date(o.created_at).toLocaleString()}</p></div>
+                <div class="text-right"><p class="text-xs text-[#d4af37]">Cost</p><p class="text-white font-bold">$${o.repair_cost}</p></div>
             </div>
-            <div>
-                <h4 class="text-sm uppercase tracking-wider text-gray-400 mb-3">Customer Signature Approval</h4>
-                ${renderMedia(o.signature_url, 'img')}
-            </div>
-            <div>
-                <h4 class="text-sm uppercase tracking-wider text-gray-400 mb-3">Cashier Pre-Repair Diagnostic Video</h4>
-                ${renderMedia(o.diag_video_url, 'video')}
-            </div>
+            <div><h4 class="text-sm text-gray-400 mb-3">Signature</h4>${renderMedia(o.signature_url, 'img')}</div>
+            <div><h4 class="text-sm text-gray-400 mb-3">Cashier Video</h4>${renderMedia(o.diag_video_url, 'video')}</div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <h4 class="text-sm uppercase tracking-wider text-gray-400 mb-3">Tech: Pre-Repair Video</h4>
-                    ${renderMedia(o.tech_pre_repair_video_url, 'video')}
-                </div>
-                <div>
-                    <h4 class="text-sm uppercase tracking-wider text-gray-400 mb-3">Tech: Post-Repair Video</h4>
-                    ${renderMedia(o.tech_post_repair_video_url, 'video')}
-                </div>
+                <div><h4 class="text-sm text-gray-400 mb-3">Tech Pre-Repair</h4>${renderMedia(o.tech_pre_repair_video_url, 'video')}</div>
+                <div><h4 class="text-sm text-gray-400 mb-3">Tech Post-Repair</h4>${renderMedia(o.tech_post_repair_video_url, 'video')}</div>
             </div>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div>
-                    <h4 class="text-sm uppercase tracking-wider text-gray-400 mb-3">Driver: Station Pickup</h4>
-                    ${renderMedia(o.driver_station_pickup_img, 'img')}
-                </div>
-                <div>
-                    <h4 class="text-sm uppercase tracking-wider text-gray-400 mb-3">Driver: Tech Dropoff</h4>
-                    ${renderMedia(o.driver_tech_dropoff_img, 'img')}
-                </div>
-                <div>
-                    <h4 class="text-sm uppercase tracking-wider text-gray-400 mb-3">Driver: Tech Pickup</h4>
-                    ${renderMedia(o.driver_tech_pickup_img, 'img')}
-                </div>
-                <div>
-                    <h4 class="text-sm uppercase tracking-wider text-gray-400 mb-3">Driver: Station Dropoff</h4>
-                    ${renderMedia(o.driver_station_dropoff_img, 'img')}
-                </div>
+                <div><h4 class="text-sm text-gray-400 mb-3">Drv Station Pick</h4>${renderMedia(o.driver_station_pickup_img, 'img')}</div>
+                <div><h4 class="text-sm text-gray-400 mb-3">Drv Tech Drop</h4>${renderMedia(o.driver_tech_dropoff_img, 'img')}</div>
+                <div><h4 class="text-sm text-gray-400 mb-3">Drv Tech Pick</h4>${renderMedia(o.driver_tech_pickup_img, 'img')}</div>
+                <div><h4 class="text-sm text-gray-400 mb-3">Drv Station Drop</h4>${renderMedia(o.driver_station_dropoff_img, 'img')}</div>
             </div>
         `;
-
         document.getElementById('evContent').innerHTML = html;
         openModal('evidenceModal');
     }
-
-    window.onload = () => {
-        sigCanvas = document.getElementById('sigCanvas');
-        sigCtx = sigCanvas.getContext('2d');
-        sigCtx.strokeStyle = "#000"; sigCtx.lineWidth = 2;
-        sigCanvas.addEventListener('mousedown', startDraw);
-        sigCanvas.addEventListener('mousemove', draw);
-        sigCanvas.addEventListener('mouseup', () => drawing = false);
-        sigCanvas.addEventListener('mouseleave', () => drawing = false);
-        sigCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDraw(e.touches[0]); }, { passive: false });
-        sigCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e.touches[0]); }, { passive: false });
-        sigCanvas.addEventListener('touchend', () => drawing = false);
-        fetchOrders();
-    };
 
     function getPos(e) { const r = sigCanvas.getBoundingClientRect(); return { x: (e.clientX || e.pageX) - r.left, y: (e.clientY || e.pageY) - r.top }; }
     function startDraw(e) { drawing = true; sigCtx.beginPath(); sigCtx.moveTo(getPos(e).x, getPos(e).y); }
@@ -532,13 +449,10 @@
     async function fetchOrders() {
         try {
             const res = await fetch('/api/orders');
-            if (!res.ok) throw new Error("Server returned " + res.status);
+            if (res.status === 401) { logout(); return; }
             orders = await res.json();
             renderView();
-        } catch (err) {
-            document.getElementById('view-container').innerText = "Error loading data from server: " + err.message;
-            console.error("Fetch error:", err);
-        }
+        } catch (err) { document.getElementById('view-container').innerText = "Error loading data."; }
     }
 
     async function advanceOrder(id) {
@@ -549,89 +463,48 @@
     document.getElementById('intakeForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = sigCanvas.width;
-        tempCanvas.height = sigCanvas.height;
+        tempCanvas.width = sigCanvas.width; tempCanvas.height = sigCanvas.height;
         const tempCtx = tempCanvas.getContext('2d');
-        tempCtx.fillStyle = "#ffffff";
-        tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+        tempCtx.fillStyle = "#ffffff"; tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
         tempCtx.drawImage(sigCanvas, 0, 0);
         const signatureBase64 = tempCanvas.toDataURL('image/png');
-        
         try {
             const res = await fetch('/api/orders', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    customerName: m_customerName.value,
-                    customerPhone: m_customerPhone.value,
-                    deviceModel: m_deviceModel.value,
-                    issue: `${m_repairType.options[m_repairType.selectedIndex].text} - ${m_issue.value}`,
-                    repairCost: m_repairCost.value,
-                    signatureBase64,
-                    diagVideoUrl: uploadedVideoUrl
+                    customerName: m_customerName.value, customerPhone: m_customerPhone.value,
+                    deviceModel: m_deviceModel.value, issue: `${m_repairType.value} - ${m_issue.value}`,
+                    repairCost: m_repairCost.value, signatureBase64, diagVideoUrl: uploadedVideoUrl
                 })
             });
-
-            if(res.ok) {
-                const data = await res.json();
-                if(data.success) {
-                    closeModal('intakeModal');
-                    uploadedVideoUrl = null;
-                    fetchOrders();
-                } else {
-                    alert("Error: " + data.error);
-                }
-            } else {
-                const err = await res.json().catch(() => ({ error: "Server returned an invalid response." }));
-                alert("Error: " + err.error);
-            }
-        } catch (err) {
-            alert("Network error submitting order: " + err.message);
-        }
+            if(res.ok) { closeModal('intakeModal'); uploadedVideoUrl = null; fetchOrders(); }
+        } catch (err) { alert("Network error."); }
     });
 
-    function openModal(id) { 
-        document.getElementById(id).classList.remove('hidden'); 
-        document.getElementById(id).classList.add('flex'); 
-        if(id === 'intakeModal') { nextStep(1); updateEstimate(); }
-    }
-    function closeModal(id) { 
-        document.getElementById(id).classList.add('hidden'); 
-        document.getElementById(id).classList.remove('flex'); 
-    }
-    
+    function openModal(id) { document.getElementById(id).classList.remove('hidden'); document.getElementById(id).classList.add('flex'); if(id === 'intakeModal') { nextStep(1); updateEstimate(); } }
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); }
     function openTechVideoModal(orderId, type) {
-        activeTechOrderId = orderId;
-        activeTechType = type;
-        const order = orders.find(o => o.id === orderId);
-        if(!order) return;
+        activeTechOrderId = orderId; activeTechType = type;
         document.getElementById('techVideoTitle').innerText = type === 'pre' ? 'Pre-Repair Video' : 'Post-Repair Video';
-        document.getElementById('techVideoSubtitle').innerText = `Order: ${order.id} (${order.device_model})`;
+        document.getElementById('techVideoSubtitle').innerText = `Order: ${orderId}`;
         openModal('techVideoModal');
     }
 
-    function switchRole(role) { 
-        currentRole = role; 
-        document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active')); 
-        document.getElementById(`btn-${role}`).classList.add('active'); 
-        renderView(); 
-        toggleSidebar();
-    }
-
+    // --- ROLE-SPECIFIC RENDERING ---
     function renderView() {
         const c = document.getElementById('view-container');
-        if(currentRole === 'owner') c.innerHTML = renderOwner();
-        else if(currentRole === 'cashier') c.innerHTML = renderCashier();
-        else if(currentRole === 'driver') c.innerHTML = renderDriver();
-        else if(currentRole === 'tech') c.innerHTML = renderTech();
+        if(currentUser.role === 'owner') c.innerHTML = renderOwner();
+        else if(currentUser.role === 'cashier') c.innerHTML = renderCashier();
+        else if(currentUser.role === 'driver') c.innerHTML = renderDriver();
+        else if(currentUser.role === 'tech') c.innerHTML = renderTech();
     }
 
-    function renderStatCard(label, val, color) { return `<div class="bg-white/5 border border-white/5 p-4 md:p-6 rounded-2xl"><p class="text-xs text-gray-500 uppercase tracking-wider mb-2">${label}</p><h3 class="text-xl md:text-2xl font-bold ${color}">${val}</h3></div>`; }
+    function renderStatCard(label, val, color) { return `<div class="bg-white/5 border border-white/5 p-4 md:p-6 rounded-2xl"><p class="text-xs text-gray-500 uppercase mb-2">${label}</p><h3 class="text-xl md:text-2xl font-bold ${color}">${val}</h3></div>`; }
     
     function renderOwner() {
         const completed = orders.filter(o => o.status === 'COMPLETED');
-        return `<div class="mb-6 md:mb-10"><h2 class="text-3xl md:text-4xl font-bold mb-2">Company Overview</h2><p class="text-gray-500">Global financial metrics.</p></div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        return `<div class="mb-6 md:mb-10"><h2 class="text-3xl md:text-4xl font-bold mb-2">Company Overview</h2></div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
             ${renderStatCard('Total Revenue', `$${completed.reduce((a,b) => a + b.repair_cost, 0)}`, 'text-emerald-400')}
             ${renderStatCard('Business Profit', `$${completed.reduce((a,b) => a + b.business_cut, 0)}`, 'text-[#d4af37]')}
             ${renderStatCard('Active Repairs', orders.filter(o => o.status !== 'COMPLETED').length, 'text-white')}
@@ -639,25 +512,9 @@
         <div class="glass rounded-2xl p-4 md:p-6 overflow-x-auto">
             <h3 class="text-lg font-bold mb-4">All Orders & Dispute Center</h3>
             <table class="w-full text-sm min-w-[500px]">
-                <thead class="text-gray-500 uppercase text-xs border-b border-white/5">
-                    <tr>
-                        <th class="text-left py-3">Order ID</th>
-                        <th class="text-left">Customer</th>
-                        <th class="text-left">Device</th>
-                        <th class="text-left">Status</th>
-                        <th class="text-right">Evidence</th>
-                    </tr>
-                </thead>
+                <thead class="text-gray-500 uppercase text-xs border-b border-white/5"><tr><th class="text-left py-3">Order ID</th><th class="text-left">Customer</th><th class="text-left">Device</th><th class="text-left">Status</th><th class="text-right">Evidence</th></tr></thead>
                 <tbody class="divide-y divide-white/5">
-                    ${orders.map(o => `
-                        <tr>
-                            <td class="py-3 text-gray-400 font-mono">${sanitize(o.id)}</td>
-                            <td>${sanitize(o.customer_name)}</td>
-                            <td>${sanitize(o.device_model)}</td>
-                            <td><span class="text-xs bg-white/5 px-2 py-1 rounded">${sanitize(o.status.replace(/_/g, ' '))}</span></td>
-                            <td class="text-right"><button onclick="openEvidenceModal('${o.id}')" class="btn-gold px-3 py-1 rounded-lg text-xs whitespace-nowrap">View Evidence</button></td>
-                        </tr>
-                    `).join('')}
+                    ${orders.map(o => `<tr><td class="py-3 text-gray-400 font-mono">${sanitize(o.id)}</td><td>${sanitize(o.customer_name)}</td><td>${sanitize(o.device_model)}</td><td><span class="text-xs bg-white/5 px-2 py-1 rounded">${sanitize(o.status.replace(/_/g, ' '))}</span></td><td class="text-right"><button onclick="openEvidenceModal('${o.id}')" class="btn-gold px-3 py-1 rounded-lg text-xs whitespace-nowrap">View Evidence</button></td></tr>`).join('')}
                 </tbody>
             </table>
         </div>`;
@@ -679,36 +536,12 @@
         const dropTech = orders.filter(o => o.status === 'DRIVER_TO_TECH');
         const pickTech = orders.filter(o => o.status === 'REPAIR_DONE');
         const dropStation = orders.filter(o => o.status === 'DRIVER_TO_STATION');
-
-        const getPhotoBtn = (o, type) => {
-            const colName = `driver_${type}_img`;
-            if (o[colName]) {
-                return `<span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full border border-emerald-500/20">Photo ✓</span>`;
-            } else {
-                return `<button onclick="openPhotoModal('${o.id}', '${type}')" class="text-[10px] bg-white/5 hover:bg-white/10 text-white px-2 py-1 rounded-full border border-white/10">Take Photo</button>`;
-            }
-        };
-
-        const card = (o, type, txt) => {
-            return `
-                <div class="bg-black/30 border border-white/10 rounded-xl p-4 md:p-5 flex flex-col gap-4">
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                        <div><h4 class="font-semibold text-white">${sanitize(o.device_model)}</h4><p class="text-sm text-gray-500">${sanitize(o.customer_name)}</p></div>
-                        <button onclick="advanceOrder('${o.id}')" class="bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-lg text-xs font-medium border border-white/10 w-full sm:w-auto text-center">${txt}</button>
-                    </div>
-                    <div class="flex gap-2 border-t border-white/5 pt-3">
-                        ${getPhotoBtn(o, type)}
-                    </div>
-                </div>
-            `;
-        };
-
+        const getPhotoBtn = (o, type) => o[`driver_${type}_img`] ? `<span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full border border-emerald-500/20">Photo ✓</span>` : `<button onclick="openPhotoModal('${o.id}', '${type}')" class="text-[10px] bg-white/5 hover:bg-white/10 text-white px-2 py-1 rounded-full border border-white/10">Take Photo</button>`;
+        const card = (o, type, txt) => `<div class="bg-black/30 border border-white/10 rounded-xl p-4 md:p-5 flex flex-col gap-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><div><h4 class="font-semibold text-white">${sanitize(o.device_model)}</h4><p class="text-sm text-gray-500">${sanitize(o.customer_name)}</p></div><button onclick="advanceOrder('${o.id}')" class="bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-lg text-xs font-medium border border-white/10 w-full sm:w-auto text-center">${txt}</button></div><div class="flex gap-2 border-t border-white/5 pt-3">${getPhotoBtn(o, type)}</div></div>`;
         return `<div class="mb-6 md:mb-10"><h2 class="text-3xl md:text-4xl font-bold mb-2">Driver Routes</h2></div>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div><h3 class="text-sm uppercase tracking-wider text-blue-400 mb-4">Station Pickups</h3><div class="space-y-3">${pickStation.map(o => card(o, 'station_pickup', 'Picked Up')).join('') || '<p class="text-gray-600 text-sm italic">None scheduled.</p>'}</div>
-            <h3 class="text-sm uppercase tracking-wider text-amber-400 mb-4 mt-8">Drop to Tech</h3><div class="space-y-3">${dropTech.map(o => card(o, 'tech_dropoff', 'Dropped at Tech')).join('') || '<p class="text-gray-600 text-sm italic">None.</p>'}</div></div>
-            <div><h3 class="text-sm uppercase tracking-wider text-purple-400 mb-4">Tech Pickups</h3><div class="space-y-3">${pickTech.map(o => card(o, 'tech_pickup', 'Picked Up')).join('') || '<p class="text-gray-600 text-sm italic">None ready.</p>'}</div>
-            <h3 class="text-sm uppercase tracking-wider text-emerald-400 mb-4 mt-8">Drop to Station</h3><div class="space-y-3">${dropStation.map(o => card(o, 'station_dropoff', 'Dropped at Station')).join('') || '<p class="text-gray-600 text-sm italic">None.</p>'}</div></div>
+            <div><h3 class="text-sm uppercase tracking-wider text-blue-400 mb-4">Station Pickups</h3><div class="space-y-3">${pickStation.map(o => card(o, 'station_pickup', 'Picked Up')).join('') || '<p class="text-gray-600 text-sm italic">None scheduled.</p>'}</div><h3 class="text-sm uppercase tracking-wider text-amber-400 mb-4 mt-8">Drop to Tech</h3><div class="space-y-3">${dropTech.map(o => card(o, 'tech_dropoff', 'Dropped at Tech')).join('') || '<p class="text-gray-600 text-sm italic">None.</p>'}</div></div>
+            <div><h3 class="text-sm uppercase tracking-wider text-purple-400 mb-4">Tech Pickups</h3><div class="space-y-3">${pickTech.map(o => card(o, 'tech_pickup', 'Picked Up')).join('') || '<p class="text-gray-600 text-sm italic">None ready.</p>'}</div><h3 class="text-sm uppercase tracking-wider text-emerald-400 mb-4 mt-8">Drop to Station</h3><div class="space-y-3">${dropStation.map(o => card(o, 'station_dropoff', 'Dropped at Station')).join('') || '<p class="text-gray-600 text-sm italic">None.</p>'}</div></div>
         </div>`;
     }
 
@@ -716,28 +549,10 @@
         const inc = orders.filter(o => o.status === 'AT_TECH');
         const rep = orders.filter(o => o.status === 'REPAIRING');
         const card = (o, txt) => {
-            const preVidBtn = o.tech_pre_repair_video_url 
-                ? `<span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full border border-emerald-500/20">Pre-Repair ✓</span>` 
-                : `<button onclick="openTechVideoModal('${o.id}', 'pre')" class="text-[10px] bg-white/5 hover:bg-white/10 text-white px-2 py-1 rounded-full border border-white/10">Rec Pre-Repair</button>`;
-            
-            const postVidBtn = o.tech_post_repair_video_url 
-                ? `<span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full border border-emerald-500/20">Post-Repair ✓</span>` 
-                : `<button onclick="openTechVideoModal('${o.id}', 'post')" class="text-[10px] bg-white/5 hover:bg-white/10 text-white px-2 py-1 rounded-full border border-white/10">Rec Post-Repair</button>`;
-
-            return `
-                <div class="bg-black/30 border border-white/10 rounded-xl p-4 md:p-5 flex flex-col gap-4">
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                        <div><h4 class="font-semibold text-white">${sanitize(o.device_model)}</h4><p class="text-sm text-gray-500">${sanitize(o.customer_name)} • ${sanitize(o.issue)}</p></div>
-                        <button onclick="advanceOrder('${o.id}')" class="btn-gold px-4 py-2 rounded-lg text-xs font-medium w-full sm:w-auto text-center">${txt}</button>
-                    </div>
-                    <div class="flex flex-wrap gap-2 border-t border-white/5 pt-3">
-                        ${preVidBtn}
-                        ${postVidBtn}
-                    </div>
-                </div>
-            `;
+            const preVidBtn = o.tech_pre_repair_video_url ? `<span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full border border-emerald-500/20">Pre-Repair ✓</span>` : `<button onclick="openTechVideoModal('${o.id}', 'pre')" class="text-[10px] bg-white/5 hover:bg-white/10 text-white px-2 py-1 rounded-full border border-white/10">Rec Pre-Repair</button>`;
+            const postVidBtn = o.tech_post_repair_video_url ? `<span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full border border-emerald-500/20">Post-Repair ✓</span>` : `<button onclick="openTechVideoModal('${o.id}', 'post')" class="text-[10px] bg-white/5 hover:bg-white/10 text-white px-2 py-1 rounded-full border border-white/10">Rec Post-Repair</button>`;
+            return `<div class="bg-black/30 border border-white/10 rounded-xl p-4 md:p-5 flex flex-col gap-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><div><h4 class="font-semibold text-white">${sanitize(o.device_model)}</h4><p class="text-sm text-gray-500">${sanitize(o.issue)}</p></div><button onclick="advanceOrder('${o.id}')" class="btn-gold px-4 py-2 rounded-lg text-xs font-medium w-full sm:w-auto text-center">${txt}</button></div><div class="flex flex-wrap gap-2 border-t border-white/5 pt-3">${preVidBtn}${postVidBtn}</div></div>`;
         };
-
         return `<div class="mb-6 md:mb-10"><h2 class="text-3xl md:text-4xl font-bold mb-2">Repair Queue</h2></div>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div><h3 class="text-sm uppercase tracking-wider text-gray-400 mb-4">Incoming</h3><div class="space-y-3">${inc.map(o => card(o, 'Start Repair')).join('') || '<p class="text-gray-600 text-sm italic">Empty.</p>'}</div></div>
