@@ -3,7 +3,7 @@ const Database = require('better-sqlite3');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
-require('dotenv').config();
+const multer = require('multer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
