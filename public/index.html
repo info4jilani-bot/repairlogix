@@ -513,7 +513,79 @@
         document.getElementById('techVideoSubtitle').innerText = `Order: ${order.id} (${order.device_model})`;
         openModal('techVideoModal');
     }
+    function openEvidenceModal(orderId) {
+        const o = orders.find(o => o.id === orderId);
+        if (!o) return;
 
+        document.getElementById('evSubtitle').innerText = `Order: ${o.id} • Customer: ${o.customer_name}`;
+
+        // Helper to generate HTML for media
+        const renderMedia = (url, type) => {
+            if (!url) return `<div class="bg-black/30 border border-dashed border-white/10 rounded-xl p-4 text-center text-xs text-gray-600 italic">Not Recorded</div>`;
+            if (type === 'video') return `<video src="${url}" controls class="w-full rounded-xl border border-white/10"></video>`;
+            if (type === 'img') return `<img src="${url}" class="w-full rounded-xl border border-white/10">`;
+            return `<div class="bg-black/30 border border-dashed border-white/10 rounded-xl p-4 text-center text-xs text-gray-600 italic">Not Recorded</div>`;
+        };
+
+        const dateStr = new Date(o.created_at).toLocaleString();
+
+        const html = `
+            <div class="bg-[#d4af37]/10 border border-[#d4af37]/20 rounded-xl p-4 flex justify-between items-center">
+                <div>
+                    <p class="text-xs uppercase tracking-wider text-[#d4af37]">Drop-off Timestamp</p>
+                    <p class="text-white font-bold">${dateStr}</p>
+                </div>
+                <div>
+                    <p class="text-xs uppercase tracking-wider text-[#d4af37] text-right">Final Repair Cost</p>
+                    <p class="text-white font-bold text-right">$${o.repair_cost}</p>
+                </div>
+            </div>
+
+            <div>
+                <h4 class="text-sm uppercase tracking-wider text-gray-400 mb-3">Customer Signature Approval</h4>
+                ${renderMedia(o.signature_url, 'img')}
+            </div>
+
+            <div>
+                <h4 class="text-sm uppercase tracking-wider text-gray-400 mb-3">Cashier Pre-Repair Diagnostic Video</h4>
+                ${renderMedia(o.diag_video_url, 'video')}
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <h4 class="text-sm uppercase tracking-wider text-gray-400 mb-3">Tech: Pre-Repair Video</h4>
+                    ${renderMedia(o.tech_pre_repair_video_url, 'video')}
+                </div>
+                <div>
+                    <h4 class="text-sm uppercase tracking-wider text-gray-400 mb-3">Tech: Post-Repair Video</h4>
+                    ${renderMedia(o.tech_post_repair_video_url, 'video')}
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                    <h4 class="text-sm uppercase tracking-wider text-gray-400 mb-3">Driver: Station Pickup</h4>
+                    ${renderMedia(o.driver_station_pickup_img, 'img')}
+                </div>
+                <div>
+                    <h4 class="text-sm uppercase tracking-wider text-gray-400 mb-3">Driver: Tech Dropoff</h4>
+                    ${renderMedia(o.driver_tech_dropoff_img, 'img')}
+                </div>
+                <div>
+                    <h4 class="text-sm uppercase tracking-wider text-gray-400 mb-3">Driver: Tech Pickup</h4>
+                    ${renderMedia(o.driver_tech_pickup_img, 'img')}
+                </div>
+                <div>
+                    <h4 class="text-sm uppercase tracking-wider text-gray-400 mb-3">Driver: Station Dropoff</h4>
+                    ${renderMedia(o.driver_station_dropoff_img, 'img')}
+                </div>
+            </div>
+        `;
+
+        document.getElementById('evContent').innerHTML = html;
+        openModal('evidenceModal');
+    }
+    
     function switchRole(role) { currentRole = role; document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active')); document.getElementById(`btn-${role}`).classList.add('active'); renderView(); }
 
     function renderView() {
@@ -534,7 +606,31 @@
             ${renderStatCard('Business Profit', `$${completed.reduce((a,b) => a + b.business_cut, 0)}`, 'text-[#d4af37]')}
             ${renderStatCard('Active Repairs', orders.filter(o => o.status !== 'COMPLETED').length, 'text-white')}
         </div>
-        <div class="glass rounded-2xl p-6"><h3 class="text-lg font-bold mb-4">All Orders</h3>${orders.map(o => `<div class="p-3 border-b border-white/5 flex justify-between"><span>${sanitize(o.customer_name)} (${sanitize(o.device_model)})</span><span class="text-xs bg-white/5 px-2 py-1 rounded">${sanitize(o.status.replace(/_/g, ' '))}</span></div>`).join('')}</div>`;
+        <div class="glass rounded-2xl p-6">
+            <h3 class="text-lg font-bold mb-4">All Orders & Dispute Center</h3>
+            <table class="w-full text-sm">
+                <thead class="text-gray-500 uppercase text-xs border-b border-white/5">
+                    <tr>
+                        <th class="text-left py-3">Order ID</th>
+                        <th class="text-left">Customer</th>
+                        <th class="text-left">Device</th>
+                        <th class="text-left">Status</th>
+                        <th class="text-right">Evidence</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                    ${orders.map(o => `
+                        <tr>
+                            <td class="py-3 text-gray-400 font-mono">${sanitize(o.id)}</td>
+                            <td>${sanitize(o.customer_name)}</td>
+                            <td>${sanitize(o.device_model)}</td>
+                            <td><span class="text-xs bg-white/5 px-2 py-1 rounded">${sanitize(o.status.replace(/_/g, ' '))}</span></td>
+                            <td class="text-right"><button onclick="openEvidenceModal('${o.id}')" class="btn-gold px-3 py-1 rounded-lg text-xs">View Evidence</button></td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>`;
     }
 
     function renderCashier() {
@@ -619,6 +715,23 @@
             <div><h3 class="text-sm uppercase tracking-wider text-gray-400 mb-4">Repairing</h3><div class="space-y-3">${rep.map(o => card(o, 'Mark Repaired')).join('') || '<p class="text-gray-600 text-sm italic">Empty.</p>'}</div></div>
         </div>`;
     }
+
+    <!-- Evidence Viewer Modal -->
+<div id="evidenceModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+    <div class="glass rounded-3xl w-full max-w-4xl p-8 relative max-h-[90vh] flex flex-col">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h3 class="text-2xl font-bold" id="evTitle">Dispute Evidence & Audit Trail</h3>
+                <p class="text-gray-500 text-sm" id="evSubtitle">Order: ...</p>
+            </div>
+            <button onclick="closeModal('evidenceModal')" class="text-gray-500 hover:text-white text-2xl">&times;</button>
+        </div>
+        
+        <div id="evContent" class="space-y-6 overflow-y-auto pr-4">
+            <!-- Populated by JS -->
+        </div>
+    </div>
+</div>
 </script>
 </body>
 </html>
