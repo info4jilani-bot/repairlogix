@@ -126,4 +126,4 @@ app.patch('/api/orders/:id/driver-image', (req, res) => {
     if (!validTypes.includes(type)) return res.status(400).json({ error: "Invalid photo type" });
 
     const column = `driver_${type}_img`;
-    const base64Data = imageBase64.replace(/^data:image\/png;base
+   const base64Data = imageBase64.replace("data:image/png;base64,", "");
