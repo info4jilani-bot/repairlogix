@@ -322,6 +322,7 @@
         document.getElementById(isIntake ? 'recStatus' : 'techRecStatus').innerText = "Saving video to server...";
     }
 
+ // --- REPLACE THE uploadVideo FUNCTION WITH THIS ---
     async function uploadVideo() {
         const blob = new Blob(recordedChunks, { type: 'video/webm' });
         const formData = new FormData();
@@ -329,7 +330,9 @@
 
         try {
             const res = await fetch('/api/upload-video', { method: 'POST', body: formData });
-            const data = await res.json();
+            // Safely parse JSON, in case the server crashes and returns HTML
+            const data = await res.json().catch(() => ({ success: false, error: "Server returned an invalid response (likely a crash)." }));
+            
             if (data.success) {
                 const isIntake = videoContext.mode === 'intake';
                 videoStream.getTracks().forEach(track => track.stop());
@@ -350,9 +353,11 @@
                     document.getElementById('techVideoPreview').classList.add('hidden');
                     fetchOrders(); 
                 }
+            } else {
+                alert("Upload failed: " + data.error);
             }
         } catch (err) {
-            alert("Failed to upload video.");
+            alert("Network error uploading video: " + err.message);
         }
     }
 
@@ -453,30 +458,41 @@
         fetchOrders();
     }
 
+// --- REPLACE THE intakeForm EVENT LISTENER WITH THIS ---
     document.getElementById('intakeForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const signatureBase64 = sigCanvas.toDataURL('image/png');
-        const res = await fetch('/api/orders', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                customerName: m_customerName.value,
-                customerPhone: m_customerPhone.value,
-                deviceModel: m_deviceModel.value,
-                issue: `${m_repairType.options[m_repairType.selectedIndex].text} - ${m_issue.value}`,
-                repairCost: m_repairCost.value,
-                signatureBase64,
-                diagVideoUrl: uploadedVideoUrl
-            })
-        });
+        
+        try {
+            const res = await fetch('/api/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    customerName: m_customerName.value,
+                    customerPhone: m_customerPhone.value,
+                    deviceModel: m_deviceModel.value,
+                    issue: `${m_repairType.options[m_repairType.selectedIndex].text} - ${m_issue.value}`,
+                    repairCost: m_repairCost.value,
+                    signatureBase64,
+                    diagVideoUrl: uploadedVideoUrl
+                })
+            });
 
-        if(res.ok) {
-            closeModal('intakeModal');
-            uploadedVideoUrl = null;
-            fetchOrders();
-        } else {
-            const err = await res.json();
-            alert("Error: " + err.error);
+            if(res.ok) {
+                const data = await res.json();
+                if(data.success) {
+                    closeModal('intakeModal');
+                    uploadedVideoUrl = null;
+                    fetchOrders();
+                } else {
+                    alert("Error: " + data.error);
+                }
+            } else {
+                const err = await res.json().catch(() => ({ error: "Server returned an invalid response." }));
+                alert("Error: " + err.error);
+            }
+        } catch (err) {
+            alert("Network error submitting order: " + err.message);
         }
     });
 
