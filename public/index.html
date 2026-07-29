@@ -634,6 +634,79 @@
 
     function openModal(id) { document.getElementById(id).classList.remove('hidden'); document.getElementById(id).classList.add('flex'); if(id === 'intakeModal') { nextStep(1); updateEstimate(); } }
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); }
+
+        // --- PHASE 2: TECH REVISION LOGIC ---
+    function openReviseModal(orderId) {
+        document.getElementById('reviseOrderId').value = orderId;
+        openModal('techReviseModal');
+    }
+
+    document.getElementById('reviseForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('reviseOrderId').value;
+        const revisedCost = document.getElementById('reviseCost').value;
+        const revisedNotes = document.getElementById('reviseNotes').value;
+        
+        await fetch(`/api/orders/${id}/revise`, {
+            method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ revisedCost, revisedNotes })
+        });
+        closeModal('techReviseModal');
+        fetchOrders();
+    });
+
+    async function markNotRepairable(orderId) {
+        if (!confirm("Mark this device as Not Repairable? It will be sent back to the station at no charge.")) return;
+        await fetch(`/api/orders/${orderId}/not-repairable`, { method: 'PATCH' });
+        fetchOrders();
+    }
+
+    // --- PHASE 2: CASHIER HANDOVER VIDEO LOGIC ---
+    let handoverContext = { orderId: null };
+    function openHandoverVideo(orderId) {
+        handoverContext.orderId = orderId;
+        document.getElementById('techVideoTitle').innerText = "Customer Handover & Payment Video";
+        document.getElementById('techVideoSubtitle').innerText = "Record video of phone handover and cash receipt.";
+        openModal('techVideoModal');
+    }
+
+    // Override the uploadVideo function to handle handover videos
+    const originalUploadVideo = uploadVideo;
+    uploadVideo = async function() {
+        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+        const formData = new FormData();
+        formData.append('video', blob, 'handover.webm');
+        try {
+            const res = await fetch('/api/upload-video', { method: 'POST', body: formData });
+            const data = await res.json();
+            if (data.success) {
+                videoStream.getTracks().forEach(track => track.stop());
+                
+                // If this is a handover video, complete the order
+                if (document.getElementById('techVideoTitle').innerText.includes("Handover")) {
+                    await fetch(`/api/orders/${handoverContext.orderId}/handover`, {
+                        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ videoUrl: data.videoUrl })
+                    });
+                    closeModal('techVideoModal');
+                    fetchOrders();
+                } else if (videoContext.mode === 'intake') {
+                    uploadedVideoUrl = data.videoUrl;
+                    document.getElementById('btnRec').classList.remove('hidden');
+                } else {
+                    // Standard Tech pre/post video
+                    await fetch(`/api/orders/${videoContext.orderId}/tech-video`, {
+                        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ type: videoContext.type, videoUrl: data.videoUrl })
+                    });
+                    document.getElementById('btnTechStartCam').classList.remove('hidden');
+                    document.getElementById('techVideoPreview').classList.add('hidden');
+                    fetchOrders(); 
+                }
+            }
+        } catch (err) { alert("Upload failed."); }
+    }
+    
     function openTechVideoModal(orderId, type) {
         activeTechOrderId = orderId; activeTechType = type;
         document.getElementById('techVideoTitle').innerText = type === 'pre' ? 'Pre-Repair Video' : 'Post-Repair Video';
@@ -723,18 +796,9 @@
 
     function renderCashier() {
         const toDriver = orders.filter(o => o.status === 'DROPPED_AT_STATION');
-        const toCust = orders.filter(o => o.status === 'READY_FOR_CUSTOMER');
-        const card = (o, txt, cls) => `<div class="bg-black/30 border border-white/10 rounded-xl p-4 md:p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><div><h4 class="font-semibold text-white">${sanitize(o.device_model)}</h4><p class="text-sm text-gray-500">${sanitize(o.customer_name)} • $${o.repair_cost}</p></div><button onclick="advanceOrder('${o.id}')" class="${cls} px-4 py-2 rounded-lg text-xs font-medium w-full sm:w-auto text-center">${txt}</button></div>`;
-        
-        // Cashier History: Orders no longer waiting at station for pickup/dropoff
-        const history = orders.filter(o => o.status !== 'DROPPED_AT_STATION' && o.status !== 'READY_FOR_CUSTOMER');
-        
-        return `<div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-6 md:mb-10 gap-4"><div><h2 class="text-3xl md:text-4xl font-bold mb-2">Cashier Portal</h2></div><button onclick="openModal('intakeModal')" class="btn-gold px-6 py-3 rounded-xl text-sm w-full sm:w-auto">New Intake</button></div>
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div><h3 class="text-sm uppercase tracking-wider text-gray-400 mb-4">Hand Off to Driver</h3><div class="space-y-3">${toDriver.map(o => card(o, 'Mark Picked Up', 'bg-white/5 hover:bg-white/10 text-white border border-white/10')).join('') || '<p class="text-gray-600 text-sm italic">None waiting.</p>'}</div></div>
-            <div><h3 class="text-sm uppercase tracking-wider text-gray-400 mb-4">Customer Pickup</h3><div class="space-y-3">${toCust.map(o => card(o, 'Collect & Complete', 'btn-gold')).join('') || '<p class="text-gray-600 text-sm italic">None ready.</p>'}</div></div>
-        </div>
-        ${renderTrackingTable(history, 'cashier')}`;
+        const toCust = orders.filter(o => o.status === 'READY_FOR_CUSTOMER' && !o.handover_video_url);
+        const card = (o, txt, cls) => `<div class="bg-black/30 border border-white/10 rounded-xl p-4 md:p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><div><h4 class="font-semibold text-white">${sanitize(o.device_model)}</h4><p class="text-sm text-gray-500">${sanitize(o.customer_name)} • $${o.repair_cost}</p></div><button onclick="${cls.includes('btn-gold') ? `openHandoverVideo('${o.id}')` : `advanceOrder('${o.id}')`}" class="${cls} px-4 py-2 rounded-lg text-xs font-medium w-full sm:w-auto text-center">${txt}</button></div>`;
+        return `<div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-6 md:mb-10 gap-4"><div><h2 class="text-3xl md:text-4xl font-bold mb-2">Cashier Portal</h2></div><button onclick="openModal('intakeModal')" class="btn-gold px-6 py-3 rounded-xl text-sm w-full sm:w-auto">New Intake</button></div><div class="grid grid-cols-1 lg:grid-cols-2 gap-6"><div><h3 class="text-sm uppercase tracking-wider text-gray-400 mb-4">Hand Off to Driver</h3><div class="space-y-3">${toDriver.map(o => card(o, 'Mark Picked Up', 'bg-white/5 hover:bg-white/10 text-white border border-white/10')).join('') || '<p class="text-gray-600 text-sm italic">None waiting.</p>'}</div></div><div><h3 class="text-sm uppercase tracking-wider text-gray-400 mb-4">Customer Pickup (Video Required)</h3><div class="space-y-3">${toCust.map(o => card(o, 'Record Handover & Pay', 'btn-gold')).join('') || '<p class="text-gray-600 text-sm italic">None ready.</p>'}</div></div></div>${renderTrackingTable(orders.filter(o => o.status !== 'DROPPED_AT_STATION' && o.status !== 'READY_FOR_CUSTOMER'), 'cashier')}`;
     }
 
     function renderDriver() {
@@ -762,18 +826,14 @@
         const card = (o, txt) => {
             const preVidBtn = o.tech_pre_repair_video_url ? `<span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full border border-emerald-500/20">Pre-Repair ✓</span>` : `<button onclick="openTechVideoModal('${o.id}', 'pre')" class="text-[10px] bg-white/5 hover:bg-white/10 text-white px-2 py-1 rounded-full border border-white/10">Rec Pre-Repair</button>`;
             const postVidBtn = o.tech_post_repair_video_url ? `<span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full border border-emerald-500/20">Post-Repair ✓</span>` : `<button onclick="openTechVideoModal('${o.id}', 'post')" class="text-[10px] bg-white/5 hover:bg-white/10 text-white px-2 py-1 rounded-full border border-white/10">Rec Post-Repair</button>`;
-            return `<div class="bg-black/30 border border-white/10 rounded-xl p-4 md:p-5 flex flex-col gap-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><div><h4 class="font-semibold text-white">${sanitize(o.device_model)}</h4><p class="text-sm text-gray-500">${sanitize(o.issue)}</p></div><button onclick="advanceOrder('${o.id}')" class="btn-gold px-4 py-2 rounded-lg text-xs font-medium w-full sm:w-auto text-center">${txt}</button></div><div class="flex flex-wrap gap-2 border-t border-white/5 pt-3">${preVidBtn}${postVidBtn}</div></div>`;
+            
+            const revisionBanner = o.revision_status === 'Pending Customer' ? `<div class="bg-yellow-500/10 text-yellow-400 text-xs px-3 py-2 rounded-lg mt-2 text-center">⏳ Waiting for Customer Approval ($${o.revised_cost})</div>` : '';
+            const reviseBtn = o.status === 'REPAIRING' && o.revision_status !== 'Pending Customer' ? `<button onclick="openReviseModal('${o.id}')" class="text-[10px] bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 px-2 py-1 rounded-full border border-blue-500/20">Revise Estimate</button>` : '';
+            const notRepBtn = o.status === 'REPAIRING' && o.revision_status !== 'Pending Customer' ? `<button onclick="markNotRepairable('${o.id}')" class="text-[10px] bg-red-500/10 text-red-400 hover:bg-red-500/20 px-2 py-1 rounded-full border border-red-500/20">Not Repairable</button>` : '';
+
+            return `<div class="bg-black/30 border border-white/10 rounded-xl p-4 md:p-5 flex flex-col gap-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><div><h4 class="font-semibold text-white">${sanitize(o.device_model)}</h4><p class="text-sm text-gray-500">${sanitize(o.issue)}</p></div><button onclick="advanceOrder('${o.id}')" class="btn-gold px-4 py-2 rounded-lg text-xs font-medium w-full sm:w-auto text-center" ${o.revision_status === 'Pending Customer' ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>${txt}</button></div><div class="flex flex-wrap gap-2 border-t border-white/5 pt-3">${preVidBtn}${postVidBtn}${reviseBtn}${notRepBtn}</div>${revisionBanner}</div>`;
         };
-        
-        // Tech History: Orders that are on their way back, ready for customer, or completed
-        const history = orders.filter(o => !['AT_TECH', 'REPAIRING'].includes(o.status));
-        
-        return `<div class="mb-6 md:mb-10"><h2 class="text-3xl md:text-4xl font-bold mb-2">Repair Queue</h2></div>
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div><h3 class="text-sm uppercase tracking-wider text-gray-400 mb-4">Incoming</h3><div class="space-y-3">${inc.map(o => card(o, 'Start Repair')).join('') || '<p class="text-gray-600 text-sm italic">Empty.</p>'}</div></div>
-            <div><h3 class="text-sm uppercase tracking-wider text-gray-400 mb-4">Repairing</h3><div class="space-y-3">${rep.map(o => card(o, 'Mark Repaired')).join('') || '<p class="text-gray-600 text-sm italic">Empty.</p>'}</div></div>
-        </div>
-        ${renderTrackingTable(history, 'tech')}`;
+        return `<div class="mb-6 md:mb-10"><h2 class="text-3xl md:text-4xl font-bold mb-2">Repair Queue</h2></div><div class="grid grid-cols-1 lg:grid-cols-2 gap-6"><div><h3 class="text-sm uppercase tracking-wider text-gray-400 mb-4">Incoming</h3><div class="space-y-3">${inc.map(o => card(o, 'Start Repair')).join('') || '<p class="text-gray-600 text-sm italic">Empty.</p>'}</div></div><div><h3 class="text-sm uppercase tracking-wider text-gray-400 mb-4">Repairing</h3><div class="space-y-3">${rep.map(o => card(o, 'Mark Repaired')).join('') || '<p class="text-gray-600 text-sm italic">Empty.</p>'}</div></div></div>${renderTrackingTable(orders.filter(o => !['AT_TECH', 'REPAIRING'].includes(o.status)), 'tech')}`;
     }
 </script>
 </body>
