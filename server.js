@@ -68,15 +68,19 @@ db.exec(`
     revised_cost INTEGER,
     handover_video_url TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE TABLE IF NOT EXISTS activity_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_id TEXT,
+    activity_type TEXT,
+    activity_detail TEXT,
+    performed_by TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
 `);
 
 // Add columns if they don't exist
-const columns = [
-    'diag_video_url', 'tech_pre_repair_video_url', 'tech_post_repair_video_url', 
-    'driver_station_pickup_img', 'driver_tech_dropoff_img', 'driver_tech_pickup_img', 
-    'driver_station_dropoff_img', 'cashier_id', 'revision_status', 'revised_cost', 'handover_video_url'
-];
+const columns = ['diag_video_url', 'tech_pre_repair_video_url', 'tech_post_repair_video_url', 'driver_station_pickup_img', 'driver_tech_dropoff_img', 'driver_tech_pickup_img', 'driver_station_dropoff_img', 'cashier_id', 'revision_status', 'revised_cost', 'handover_video_url'];
 columns.forEach(col => {
     try { db.exec(`ALTER TABLE orders ADD COLUMN ${col} ${col.includes('cost') || col.includes('id') ? 'INTEGER' : 'TEXT'}`); } catch (e) {}
 });
@@ -104,6 +108,11 @@ const storage = multer.diskStorage({
   filename: function (req, file, cb) { cb(null, `vid_${Date.now()}.webm`); }
 });
 const upload = multer({ storage: storage });
+
+// --- HELPERS ---
+function logActivity(orderId, type, detail, performedBy = 'System') {
+    db.prepare('INSERT INTO activity_logs (order_id, activity_type, activity_detail, performed_by) VALUES (?, ?, ?, ?)').run(orderId, type, detail, performedBy);
+}
 
 // Auth Middleware
 const requireAuth = (req, res, next) => {
@@ -151,11 +160,20 @@ app.post('/api/upload-video', requireAuth, (req, res) => {
   });
 });
 
+// Get Activity Logs for Evidence
+app.get('/api/orders/:id/logs', requireAuth, (req, res) => {
+    try {
+        const logs = db.prepare('SELECT * FROM activity_logs WHERE order_id = ? ORDER BY created_at ASC').all(req.params.id);
+        res.json(logs);
+    } catch (err) { res.status(500).json({ error: "Failed to fetch logs" }); }
+});
+
 app.patch('/api/orders/:id/tech-video', requireAuth, (req, res) => {
   try {
     const { type, videoUrl } = req.body;
     const column = type === 'pre' ? 'tech_pre_repair_video_url' : 'tech_post_repair_video_url';
     db.prepare(`UPDATE orders SET ${column} = ? WHERE id = ?`).run(videoUrl, req.params.id);
+    logActivity(req.params.id, 'MEDIA_UPLOADED', `Tech uploaded ${type}-repair video.`, req.session.user.username);
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: "Failed" }); }
 });
@@ -169,6 +187,7 @@ app.patch('/api/orders/:id/driver-image', requireAuth, (req, res) => {
     fs.writeFileSync(path.join(driverUploadDir, fileName), base64Data, 'base64');
     const imgUrl = `/uploads/driver/${fileName}`;
     db.prepare(`UPDATE orders SET ${column} = ? WHERE id = ?`).run(imgUrl, req.params.id);
+    logActivity(req.params.id, 'MEDIA_UPLOADED', `Driver uploaded ${type.replace(/_/g, ' ')} photo.`, req.session.user.username);
     res.json({ success: true, imgUrl });
   } catch (err) { res.status(500).json({ error: "Failed" }); }
 });
@@ -182,7 +201,6 @@ app.get('/api/orders', requireAuth, (req, res) => {
 
 app.post('/api/orders', requireAuth, (req, res) => {
   try {
-    // repairItems is now a comma-separated string of multiple repairs
     const { customerName, customerPhone, deviceModel, repairItems, repairCost, signatureBase64, diagVideoUrl } = req.body;
     if (!customerName || !customerPhone || !deviceModel || !repairItems || !repairCost) return res.status(400).json({ error: "Missing fields" });
 
@@ -195,6 +213,9 @@ app.post('/api/orders', requireAuth, (req, res) => {
       INSERT INTO orders (id, customer_name, customer_phone, device_model, issue, repair_cost, station_cut, cashier_cut, driver_cut, tech_cut, business_cut, signature_url, diag_video_url, cashier_id)
       VALUES (@id, @customerName, @customerPhone, @deviceModel, @issue, @repairCost, @stationCut, @cashierCut, @driverCut, @techCut, @businessCut, @signatureUrl, @diagVideoUrl, @cashierId)
     `).run({ id, customerName, customerPhone, deviceModel, issue: repairItems, ...payouts, signatureUrl, diagVideoUrl: diagVideoUrl || null, cashierId: req.session.user.id });
+
+    logActivity(id, 'ORDER_CREATED', `Order created by ${req.session.user.username}. Est: $${repairCost}. Items: ${repairItems}`, req.session.user.username);
+    if (diagVideoUrl) logActivity(id, 'MEDIA_UPLOADED', 'Cashier uploaded diagnostic video.', req.session.user.username);
 
     if (process.env.TWILIO_ACCOUNT_SID) {
       try {
@@ -209,15 +230,15 @@ app.post('/api/orders', requireAuth, (req, res) => {
   } catch (error) { res.status(500).json({ error: "Server Error" }); }
 });
 
-// --- PHASE 2: TECH REVISION & APPROVAL ROUTES ---
-
-// Tech sends revised estimate to customer
+// --- TECH REVISION & APPROVAL ROUTES ---
 app.patch('/api/orders/:id/revise', requireAuth, (req, res) => {
     const { revisedCost, revisedNotes } = req.body;
     if (!revisedCost || !revisedNotes) return res.status(400).json({ error: "Missing cost or notes" });
     
     db.prepare('UPDATE orders SET revision_status = ?, revised_cost = ?, issue = ? WHERE id = ?')
       .run('Pending Customer', revisedCost, revisedNotes, req.params.id);
+
+    logActivity(req.params.id, 'REVISION_REQUESTED', `Tech requested price change to $${revisedCost}. Reason: ${revisedNotes}`, req.session.user.username);
 
     if (process.env.TWILIO_ACCOUNT_SID) {
         const client = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
@@ -230,8 +251,6 @@ app.patch('/api/orders/:id/revise', requireAuth, (req, res) => {
     res.json({ success: true });
 });
 
-// Public route for customer to approve/reject revision
-// Public route for customer to approve/reject revision
 app.patch('/api/public/revise/:id/:action', (req, res) => {
     const { id, action } = req.params;
     const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(id);
@@ -241,17 +260,18 @@ app.patch('/api/public/revise/:id/:action', (req, res) => {
         const newPayouts = calculatePayouts(order.revised_cost);
         db.prepare('UPDATE orders SET revision_status = ?, repair_cost = ?, station_cut = ?, cashier_cut = ?, driver_cut = ?, tech_cut = ?, business_cut = ? WHERE id = ?')
           .run('Approved', newPayouts.repairCost, newPayouts.stationCut, newPayouts.cashierCut, newPayouts.driverCut, newPayouts.techCut, newPayouts.businessCut, id);
+        logActivity(id, 'REVISION_APPROVED', `Customer APPROVED the revised estimate of $${order.revised_cost}.`, 'Customer');
     } else {
-        // If rejected, zero out the price, set status to Rejected, and route back to Driver for return
         db.prepare('UPDATE orders SET revision_status = ?, status = ?, repair_cost = ?, station_cut = ?, cashier_cut = ?, driver_cut = ?, tech_cut = ?, business_cut = ? WHERE id = ?')
           .run('Rejected', 'DRIVER_TO_STATION', 0, 0, 0, 0, 0, 0, id);
+        logActivity(id, 'REVISION_REJECTED', `Customer REJECTED the revised estimate. Order routed back to driver for return.`, 'Customer');
     }
     res.json({ success: true });
 });
 
-// Tech marks as Not Repairable
 app.patch('/api/orders/:id/not-repairable', requireAuth, (req, res) => {
     db.prepare('UPDATE orders SET status = ?, revision_status = ? WHERE id = ?').run('DRIVER_TO_STATION', 'Not Repairable', req.params.id);
+    logActivity(req.params.id, 'NOT_REPAIRABLE', `Tech marked device as Not Repairable. Routed to driver for return.`, req.session.user.username);
     
     if (process.env.TWILIO_ACCOUNT_SID) {
         const client = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
@@ -264,14 +284,12 @@ app.patch('/api/orders/:id/not-repairable', requireAuth, (req, res) => {
     res.json({ success: true });
 });
 
-// --- PHASE 2: CASHIER HANDOVER VIDEO ROUTE ---
-
-// Cashier completes order WITH handover video
 app.patch('/api/orders/:id/handover', requireAuth, (req, res) => {
     const { videoUrl } = req.body;
     if (!videoUrl) return res.status(400).json({ error: "Handover video is required" });
 
     db.prepare('UPDATE orders SET status = ?, handover_video_url = ? WHERE id = ?').run('COMPLETED', videoUrl, req.params.id);
+    logActivity(req.params.id, 'HANDOVER_COMPLETE', `Cashier recorded handover & payment video. Order COMPLETED.`, req.session.user.username);
     
     if (process.env.TWILIO_ACCOUNT_SID) {
         const client = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
@@ -296,6 +314,18 @@ app.patch('/api/orders/:id/advance', requireAuth, (req, res) => {
       const nextStatus = workflow[currentIndex + 1];
       db.prepare('UPDATE orders SET status = ? WHERE id = ?').run(nextStatus, req.params.id);
       
+      const statusMessages = {
+          'DRIVER_TO_TECH': 'Driver picked up from station.',
+          'AT_TECH': 'Driver dropped off at tech lab.',
+          'REPAIRING': 'Tech started repair.',
+          'REPAIR_DONE': 'Tech finished repair.',
+          'DRIVER_TO_STATION': 'Driver picked up from tech.',
+          'READY_FOR_CUSTOMER': 'Driver dropped off at station.',
+          'COMPLETED': 'Order completed.'
+      };
+
+      logActivity(req.params.id, nextStatus, statusMessages[nextStatus] || `Status changed to ${nextStatus.replace(/_/g, ' ')}`, req.session.user.username);
+
       if (process.env.TWILIO_ACCOUNT_SID) {
          const client = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
          let msg = "";
@@ -318,4 +348,4 @@ app.get('/api/track/:id', (req, res) => {
   } catch (err) { res.status(500).json({ error: "Server error" }); }
 });
 
-app.listen(PORT, () => console.log(`RepairLogix Phase 2 running on port ${PORT}`));
+app.listen(PORT, () => console.log(`RepairLogix Audit Trail System running on port ${PORT}`));
