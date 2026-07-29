@@ -141,7 +141,23 @@
                             </select>
                         </div>
                         <div><label class="block text-xs uppercase tracking-wider text-gray-500 mb-2">Repair Type</label>
-                            <select id="m_repairType" onchange="updateEstimate()" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#d4af37]">
+                                                    <div>
+                            <label class="block text-xs uppercase tracking-wider text-gray-500 mb-2">Repair Type (Hold Ctrl/Cmd for multiple)</label>
+                            <select id="m_repairType" multiple onchange="updateEstimate()" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#d4af37] h-32">
+                                <option value="screen">Screen Only / Module</option>
+                                <option value="battery">Standalone Battery</option>
+                                <option value="back_glass">Back Glass Only</option>
+                                <option value="rear_cam">Rear Camera Module</option>
+                                <option value="full_device">Full Device / Other Damage</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs uppercase tracking-wider text-gray-500 mb-2">Auto-Calc Repair Cost ($)</label>
+                        <input type="number" id="m_repairCost" value="0" min="30" max="2000" required class="w-full bg-transparent text-3xl font-bold text-[#d4af37] outline-none border-b border-[#d4af37]/30 focus:border-[#d4af37] pb-1">
+                    </div>
+                        
+                                
                                 <option value="screen">Screen Only / Module</option><option value="battery">Standalone Battery</option><option value="back_glass">Back Glass Only</option><option value="rear_cam">Rear Camera Module</option><option value="full_device">Full Device / Other Damage</option>
                             </select>
                         </div>
@@ -406,16 +422,31 @@
     // --- HELPER FUNCTIONS ---
     function updateEstimate() {
         const model = document.getElementById('m_deviceModel').value;
-        const type = document.getElementById('m_repairType').value;
+        const select = document.getElementById('m_repairType');
         const device = PRICING_MATRIX[model];
         if (!device) return;
-        if (type === 'back_glass' && device.back_glass === null) {
-            alert("Back glass requires Full Device enclosure replacement.");
-            document.getElementById('m_repairType').value = 'full_device';
-            document.getElementById('m_repairCost').value = device.full_device;
-            return;
+
+        let totalCost = 0;
+        let selectedItems = [];
+        
+        for (let i = 0; i < select.options.length; i++) {
+            if (select.options[i].selected) {
+                const type = select.options[i].value;
+                if (type === 'back_glass' && device.back_glass === null) {
+                    alert("Back glass requires Full Device enclosure. Auto-selecting Full Device.");
+                    select.options[i].selected = false;
+                    document.getElementById('full_device_option') ? document.getElementById('full_device_option').selected = true : select.value = 'full_device';
+                    updateEstimate();
+                    return;
+                }
+                totalCost += device[type];
+                selectedItems.push(select.options[i].text);
+            }
         }
-        document.getElementById('m_repairCost').value = device[type];
+        
+        document.getElementById('m_repairCost').value = totalCost;
+        // Store the comma-separated string in a hidden field or directly use it on submit
+        window.m_repairItems = selectedItems.join(', ');
     }
 
     function sanitize(str) {
