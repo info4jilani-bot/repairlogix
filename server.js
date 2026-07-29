@@ -231,6 +231,7 @@ app.patch('/api/orders/:id/revise', requireAuth, (req, res) => {
 });
 
 // Public route for customer to approve/reject revision
+// Public route for customer to approve/reject revision
 app.patch('/api/public/revise/:id/:action', (req, res) => {
     const { id, action } = req.params;
     const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(id);
@@ -241,7 +242,9 @@ app.patch('/api/public/revise/:id/:action', (req, res) => {
         db.prepare('UPDATE orders SET revision_status = ?, repair_cost = ?, station_cut = ?, cashier_cut = ?, driver_cut = ?, tech_cut = ?, business_cut = ? WHERE id = ?')
           .run('Approved', newPayouts.repairCost, newPayouts.stationCut, newPayouts.cashierCut, newPayouts.driverCut, newPayouts.techCut, newPayouts.businessCut, id);
     } else {
-        db.prepare('UPDATE orders SET revision_status = ? WHERE id = ?').run('Rejected', id);
+        // If rejected, zero out the price, set status to Rejected, and route back to Driver for return
+        db.prepare('UPDATE orders SET revision_status = ?, status = ?, repair_cost = ?, station_cut = ?, cashier_cut = ?, driver_cut = ?, tech_cut = ?, business_cut = ? WHERE id = ?')
+          .run('Rejected', 'DRIVER_TO_STATION', 0, 0, 0, 0, 0, 0, id);
     }
     res.json({ success: true });
 });
