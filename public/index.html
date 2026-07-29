@@ -42,21 +42,33 @@
             <div id="loginError" class="text-red-400 text-sm hidden"></div>
             <button type="submit" class="btn-gold w-full py-3 rounded-xl font-semibold">Sign In</button>
         </form>
-          <button onclick="showTracking()" class="text-gray-400 hover:text-[#d4af37] text-sm mt-4 flex items-center gap-2 mx-auto transition">
+        <button onclick="showTracking()" class="text-gray-400 hover:text-[#d4af37] text-sm mt-6 flex items-center gap-2 mx-auto transition">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
             Track My Repair
         </button>
-        <div class="mt-6 text-xs text-gray-600 bg-black/20 p-4 rounded-xl text-left">
-            <p class="font-bold text-gray-400 mb-2">Default Accounts (Demo):</p>
-            <p>Owner: <span class="text-[#d4af37]">owner / owner123</span></p>
-            <p>Cashier: <span class="text-[#d4af37]">cashier / cashier123</span></p>
-            <p>Driver: <span class="text-[#d4af37]">driver / driver123</span></p>
-            <p>Tech: <span class="text-[#d4af37]">tech / tech123</span></p>
-        </div>
     </div>
 </div>
 
-    <!-- CUSTOMER TRACKING VIEW -->
+<!-- MAIN APP VIEW -->
+<div id="appView" class="hidden w-full">
+    <header class="glass border-b border-white/5 sticky top-0 z-30">
+        <div class="max-w-[1600px] mx-auto px-4 md:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 bg-gradient-to-br from-[#d4af37] to-[#8a7028] rounded-lg flex items-center justify-center shadow-lg rotate-45">
+                    <div class="w-4 h-4 bg-[#08090a] rounded-sm -rotate-45 flex items-center justify-center"><div class="w-2 h-2 bg-[#d4af37] rounded-full"></div></div>
+                </div>
+                <div><h1 class="text-lg font-bold tracking-tight">Repair<span class="text-[#d4af37]">Logix</span></h1><p class="text-[10px] uppercase tracking-[0.2em] text-gray-500 -mt-1" id="userRoleDisplay">Portal</p></div>
+            </div>
+            <div class="flex items-center gap-4">
+                <span class="text-sm text-gray-400 hidden sm:inline">Welcome, <span class="text-white font-medium" id="userNameDisplay">User</span></span>
+                <button onclick="logout()" class="text-xs bg-red-500/10 text-red-400 border border-red-500/20 px-4 py-2 rounded-lg hover:bg-red-500/20 transition">Logout</button>
+            </div>
+        </div>
+    </header>
+    <main class="max-w-[1600px] mx-auto p-4 md:p-8"><div id="view-container">Loading...</div></main>
+</div>
+
+<!-- CUSTOMER TRACKING VIEW -->
 <div id="trackingView" class="hidden fixed inset-0 overflow-y-auto p-4 z-40">
     <div class="max-w-2xl mx-auto pt-10">
         <div class="flex justify-center mb-6">
@@ -64,57 +76,23 @@
                 <div class="w-6 h-6 bg-[#08090a] rounded-sm -rotate-45 flex items-center justify-center"><div class="w-3 h-3 bg-[#d4af37] rounded-full"></div></div>
             </div>
         </div>
-        
         <div class="glass rounded-3xl p-6 md:p-8">
             <h2 class="text-2xl md:text-3xl font-bold mb-2 text-center">Track Your Repair</h2>
             <p class="text-gray-500 text-sm text-center mb-6">Enter your Order ID (e.g., RLX-XXXXX) to see live status.</p>
-            
             <div class="flex flex-col sm:flex-row gap-3 mb-6">
                 <input type="text" id="trackInput" placeholder="Enter Order ID" class="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#d4af37] uppercase">
                 <button onclick="trackOrder()" class="btn-gold px-6 py-3 rounded-xl font-semibold">Track</button>
             </div>
-            
             <div id="trackError" class="text-red-400 text-sm text-center hidden mb-4"></div>
-            
-            <div id="trackResult" class="hidden">
-                <!-- Populated by JS -->
-            </div>
-            
+            <div id="trackResult" class="hidden"></div>
             <button onclick="showLogin()" class="text-gray-500 hover:text-white text-sm mt-8 flex items-center gap-2 mx-auto">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Back to Login
             </button>
         </div>
     </div>
 </div>
-<!-- MAIN APP VIEW -->
-<div id="appView" class="hidden w-full">
-    <!-- Top Bar -->
-    <header class="glass border-b border-white/5 sticky top-0 z-30">
-        <div class="max-w-[1600px] mx-auto px-4 md:px-8 py-4 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <div class="w-9 h-9 bg-gradient-to-br from-[#d4af37] to-[#8a7028] rounded-lg flex items-center justify-center shadow-lg rotate-45">
-                    <div class="w-4 h-4 bg-[#08090a] rounded-sm -rotate-45 flex items-center justify-center"><div class="w-2 h-2 bg-[#d4af37] rounded-full"></div></div>
-                </div>
-                <div>
-                    <h1 class="text-lg font-bold tracking-tight">Repair<span class="text-[#d4af37]">Logix</span></h1>
-                    <p class="text-[10px] uppercase tracking-[0.2em] text-gray-500 -mt-1" id="userRoleDisplay">Portal</p>
-                </div>
-            </div>
-            <div class="flex items-center gap-4">
-                <span class="text-sm text-gray-400 hidden sm:inline">Welcome, <span class="text-white font-medium" id="userNameDisplay">User</span></span>
-                <button onclick="logout()" class="text-xs bg-red-500/10 text-red-400 border border-red-500/20 px-4 py-2 rounded-lg hover:bg-red-500/20 transition">Logout</button>
-            
-            
-            </div>
-        </div>
-    </header>
 
-    <main class="max-w-[1600px] mx-auto p-4 md:p-8">
-        <div id="view-container">Loading...</div>
-    </main>
-</div>
-
-<!-- Modals (Same as before) -->
+<!-- CASHIER INTAKE MODAL -->
 <div id="intakeModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden items-center justify-center p-4">
     <div class="glass rounded-3xl w-full max-w-2xl p-4 md:p-8 relative max-h-[95vh] flex flex-col">
         <div class="flex justify-between items-center mb-6"><h3 class="text-xl md:text-2xl font-bold">New Device Intake</h3><button onclick="closeModal('intakeModal')" class="text-gray-500 hover:text-white text-2xl">&times;</button></div>
@@ -140,29 +118,14 @@
                                 <optgroup label="Samsung Devices"><option>Galaxy S26 Ultra</option><option>Galaxy S26+</option><option>Galaxy S26</option><option>Galaxy S25 Ultra</option><option>Galaxy S25+</option><option>Galaxy S25</option><option>Galaxy Z Fold6</option><option>Galaxy Z Flip6</option><option>Galaxy S24 FE</option><option>Galaxy A55</option></optgroup>
                             </select>
                         </div>
-                        <div><label class="block text-xs uppercase tracking-wider text-gray-500 mb-2">Repair Type</label>
-                                                    <div>
+                        <div>
                             <label class="block text-xs uppercase tracking-wider text-gray-500 mb-2">Repair Type (Hold Ctrl/Cmd for multiple)</label>
                             <select id="m_repairType" multiple onchange="updateEstimate()" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#d4af37] h-32">
-                                <option value="screen">Screen Only / Module</option>
-                                <option value="battery">Standalone Battery</option>
-                                <option value="back_glass">Back Glass Only</option>
-                                <option value="rear_cam">Rear Camera Module</option>
-                                <option value="full_device">Full Device / Other Damage</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-xs uppercase tracking-wider text-gray-500 mb-2">Auto-Calc Repair Cost ($)</label>
-                        <input type="number" id="m_repairCost" value="0" min="30" max="2000" required class="w-full bg-transparent text-3xl font-bold text-[#d4af37] outline-none border-b border-[#d4af37]/30 focus:border-[#d4af37] pb-1">
-                    </div>
-                        
-                                
                                 <option value="screen">Screen Only / Module</option><option value="battery">Standalone Battery</option><option value="back_glass">Back Glass Only</option><option value="rear_cam">Rear Camera Module</option><option value="full_device">Full Device / Other Damage</option>
                             </select>
                         </div>
                     </div>
-                    <div><label class="block text-xs uppercase tracking-wider text-gray-500 mb-2">Auto-Calc Repair Cost ($)</label><input type="number" id="m_repairCost" value="379" min="30" max="1000" required class="w-full bg-transparent text-3xl font-bold text-[#d4af37] outline-none border-b border-[#d4af37]/30 focus:border-[#d4af37] pb-1"></div>
+                    <div><label class="block text-xs uppercase tracking-wider text-gray-500 mb-2">Auto-Calc Repair Cost ($)</label><input type="number" id="m_repairCost" value="0" min="30" max="2000" required class="w-full bg-transparent text-3xl font-bold text-[#d4af37] outline-none border-b border-[#d4af37]/30 focus:border-[#d4af37] pb-1"></div>
                 </div>
                 <div><label class="block text-xs uppercase tracking-wider text-gray-500 mb-2">Specific Issue / Notes</label><textarea id="m_issue" required rows="2" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#d4af37]" placeholder="e.g., Severe shatter"></textarea></div>
                 <button type="button" onclick="nextStep(2)" class="btn-gold w-full py-3 rounded-xl font-semibold">Continue to Diagnostic →</button>
@@ -189,6 +152,20 @@
     </div>
 </div>
 
+<!-- TECH REVISION MODAL -->
+<div id="techReviseModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+    <div class="glass rounded-3xl w-full max-w-md p-8 relative">
+        <div class="flex justify-between items-center mb-6"><h3 class="text-xl font-bold">Revise Estimate</h3><button onclick="closeModal('techReviseModal')" class="text-gray-500 hover:text-white text-2xl">&times;</button></div>
+        <form id="reviseForm" class="space-y-4">
+            <input type="hidden" id="reviseOrderId">
+            <div><label class="block text-xs uppercase tracking-wider text-gray-500 mb-2">New Repair Cost ($)</label><input type="number" id="reviseCost" min="30" max="2000" required class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#d4af37]"></div>
+            <div><label class="block text-xs uppercase tracking-wider text-gray-500 mb-2">Reason / New Repair Details</label><textarea id="reviseNotes" required rows="3" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#d4af37]" placeholder="e.g., Found additional water damage."></textarea></div>
+            <button type="submit" class="btn-gold w-full py-3 rounded-xl font-semibold">Send to Customer for Approval</button>
+        </form>
+    </div>
+</div>
+
+<!-- TECH VIDEO MODAL (Shared for Tech & Handover) -->
 <div id="techVideoModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden items-center justify-center p-4">
     <div class="glass rounded-3xl w-full max-w-2xl p-4 md:p-8 relative max-h-[95vh] flex flex-col">
         <div class="flex justify-between items-center mb-6"><div><h3 class="text-xl md:text-2xl font-bold" id="techVideoTitle">Tech Video Recorder</h3><p class="text-gray-500 text-sm" id="techVideoSubtitle">Order: ...</p></div><button onclick="closeModal('techVideoModal')" class="text-gray-500 hover:text-white text-2xl">&times;</button></div>
@@ -196,7 +173,7 @@
             <video id="techVideoPreview" autoplay muted playsinline class="w-full max-w-md rounded-lg border border-white/10 hidden"></video>
             <div id="techRecStatus" class="text-xs text-gray-500">Camera offline</div>
             <div class="flex flex-wrap gap-2 justify-center">
-                <button type="button" id="btnTechStartCam" onclick="startCamera('tech', activeTechOrderId, activeTechType)" class="bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-lg text-xs border border-white/10">Start Camera</button>
+                <button type="button" id="btnTechStartCam" onclick="startCamera('tech')" class="bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-lg text-xs border border-white/10">Start Camera</button>
                 <button type="button" id="btnTechRec" onclick="startRecording()" class="bg-red-600/80 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-xs hidden items-center gap-2"><span class="w-2 h-2 bg-white rounded-full rec-dot"></span> Record</button>
                 <button type="button" id="btnTechStop" onclick="stopRecording()" class="bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded-lg text-xs hidden">Stop & Save</button>
             </div>
@@ -204,6 +181,7 @@
     </div>
 </div>
 
+<!-- DRIVER PHOTO MODAL -->
 <div id="driverPhotoModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden items-center justify-center p-4">
     <div class="glass rounded-3xl w-full max-w-2xl p-4 md:p-8 relative max-h-[95vh] flex flex-col">
         <div class="flex justify-between items-center mb-6"><div><h3 class="text-xl md:text-2xl font-bold">Driver Photo Capture</h3><p class="text-gray-500 text-sm" id="photoSubtitle">Take a picture</p></div><button onclick="closeModal('driverPhotoModal')" class="text-gray-500 hover:text-white text-2xl">&times;</button></div>
@@ -216,6 +194,7 @@
     </div>
 </div>
 
+<!-- EVIDENCE VIEWER MODAL -->
 <div id="evidenceModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden items-center justify-center p-4">
     <div class="glass rounded-3xl w-full max-w-4xl p-4 md:p-8 relative max-h-[95vh] flex flex-col">
         <div class="flex justify-between items-center mb-6"><div><h3 class="text-xl md:text-2xl font-bold">Dispute Evidence & Audit Trail</h3><p class="text-gray-500 text-sm" id="evSubtitle">Order: ...</p></div><button onclick="closeModal('evidenceModal')" class="text-gray-500 hover:text-white text-2xl">&times;</button></div>
@@ -234,6 +213,8 @@
     let photoContext = { orderId: null, type: null };
     let activeTechOrderId = null;
     let activeTechType = null;
+    let handoverContext = { orderId: null };
+    let isHandoverMode = false;
 
     const PRICING_MATRIX = {
         "iPhone 17 Pro Max": { screen: 379, battery: 119, back_glass: 159, rear_cam: 249, full_device: 799 },
@@ -267,7 +248,6 @@
         "Galaxy A55": { screen: 129, battery: 69, back_glass: 59, rear_cam: 89, full_device: 199 }
     };
 
-    // --- AUTHENTICATION LOGIC ---
     window.onload = async () => {
         sigCanvas = document.getElementById('sigCanvas');
         sigCtx = sigCanvas.getContext('2d');
@@ -280,7 +260,15 @@
         sigCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e.touches[0]); }, { passive: false });
         sigCanvas.addEventListener('touchend', () => drawing = false);
 
-        await checkAuth();
+        // Check URL for tracking link (e.g., from SMS)
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('track')) {
+            showTracking();
+            document.getElementById('trackInput').value = urlParams.get('track').toUpperCase();
+            trackOrder();
+        } else {
+            await checkAuth();
+        }
     };
 
     async function checkAuth() {
@@ -290,19 +278,14 @@
                 const data = await res.json();
                 currentUser = data.user;
                 showApp();
-            } else {
-                showLogin();
-            }
-        } catch (err) {
-            showLogin();
-        }
+            } else { showLogin(); }
+        } catch (err) { showLogin(); }
     }
 
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const res = await fetch('/api/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username: username.value, password: password.value })
         });
         if (res.ok) {
@@ -316,145 +299,86 @@
         }
     });
 
-    async function logout() {
-        await fetch('/api/auth/logout', { method: 'POST' });
-        currentUser = null;
-        showLogin();
-    }
-
-    function showLogin() {
-        document.getElementById('loginView').classList.remove('hidden');
-        document.getElementById('appView').classList.add('hidden');
-        document.getElementById('trackingView').classList.add('hidden');
-    }
-
-    function showTracking() {
-        document.getElementById('loginView').classList.add('hidden');
-        document.getElementById('appView').classList.add('hidden');
-        document.getElementById('trackingView').classList.remove('hidden');
-        document.getElementById('trackResult').classList.add('hidden');
-        document.getElementById('trackError').classList.add('hidden');
-        document.getElementById('trackInput').value = '';
-    }
+    async function logout() { await fetch('/api/auth/logout', { method: 'POST' }); currentUser = null; showLogin(); }
+    function showLogin() { document.getElementById('loginView').classList.remove('hidden'); document.getElementById('appView').classList.add('hidden'); document.getElementById('trackingView').classList.add('hidden'); }
+    function showApp() { document.getElementById('loginView').classList.add('hidden'); document.getElementById('appView').classList.remove('hidden'); document.getElementById('userNameDisplay').innerText = currentUser.username; document.getElementById('userRoleDisplay').innerText = currentUser.role.toUpperCase() + ' PORTAL'; fetchOrders(); }
+    function showTracking() { document.getElementById('loginView').classList.add('hidden'); document.getElementById('appView').classList.add('hidden'); document.getElementById('trackingView').classList.remove('hidden'); document.getElementById('trackResult').classList.add('hidden'); document.getElementById('trackError').classList.add('hidden'); }
 
     async function trackOrder() {
         const id = document.getElementById('trackInput').value.trim().toUpperCase();
         const errBox = document.getElementById('trackError');
         const resBox = document.getElementById('trackResult');
-        
-        errBox.classList.add('hidden');
-        resBox.classList.add('hidden');
-
-        if (!id) {
-            errBox.innerText = "Please enter an Order ID.";
-            errBox.classList.remove('hidden');
-            return;
-        }
+        errBox.classList.add('hidden'); resBox.classList.add('hidden');
+        if (!id) { errBox.innerText = "Please enter an Order ID."; errBox.classList.remove('hidden'); return; }
 
         try {
             const res = await fetch(`/api/track/${id}`);
             const data = await res.json();
-            
-            if (!res.ok || !data.success) {
-                errBox.innerText = data.error || "Order not found.";
-                errBox.classList.remove('hidden');
-                return;
-            }
+            if (!res.ok || !data.success) { errBox.innerText = data.error || "Order not found."; errBox.classList.remove('hidden'); return; }
 
             const o = data.order;
             const workflow = ['DROPPED_AT_STATION', 'DRIVER_TO_TECH', 'AT_TECH', 'REPAIRING', 'REPAIR_DONE', 'DRIVER_TO_STATION', 'READY_FOR_CUSTOMER', 'COMPLETED'];
             const currentStep = workflow.indexOf(o.status);
-
             const steps = [
-                { icon: '📥', label: 'Dropped at Station' },
-                { icon: '🚗', label: 'Driver Picked Up' },
-                { icon: '🔬', label: 'At Tech Lab' },
-                { icon: '🛠️', label: 'Repairing' },
-                { icon: '✅', label: 'Repair Complete' },
-                { icon: '🚗', label: 'En Route to Station' },
-                { icon: '📦', label: 'Ready for Pickup!' },
-                { icon: '🎉', label: 'Completed & Paid' }
+                { icon: '📥', label: 'Dropped at Station' }, { icon: '🚗', label: 'Driver Picked Up' }, { icon: '🔬', label: 'At Tech Lab' },
+                { icon: '🛠️', label: 'Repairing' }, { icon: '✅', label: 'Repair Complete' }, { icon: '🚗', label: 'En Route to Station' },
+                { icon: '📦', label: 'Ready for Pickup!' }, { icon: '🎉', label: 'Completed & Paid' }
             ];
 
             let timelineHtml = '';
             steps.forEach((step, index) => {
                 const isDone = index <= currentStep;
                 const isCurrent = index === currentStep;
-                timelineHtml += `
-                    <div class="flex items-center gap-4 ${isCurrent ? 'scale-105' : ''} transition-transform">
-                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl ${isDone ? 'bg-[#d4af37]/20 border-2 border-[#d4af37]' : 'bg-black/40 border-2 border-white/10'}">
-                            ${isDone ? step.icon : '○'}
-                        </div>
-                        <div>
-                            <p class="font-medium ${isDone ? 'text-white' : 'text-gray-600'}">${step.label}</p>
-                            ${isCurrent ? '<p class="text-xs text-[#d4af37]">Current Status</p>' : ''}
-                        </div>
-                    </div>
-                `;
+                timelineHtml += `<div class="flex items-center gap-4 ${isCurrent ? 'scale-105' : ''} transition-transform"><div class="w-10 h-10 rounded-full flex items-center justify-center text-xl ${isDone ? 'bg-[#d4af37]/20 border-2 border-[#d4af37]' : 'bg-black/40 border-2 border-white/10'}">${isDone ? step.icon : '○'}</div><div><p class="font-medium ${isDone ? 'text-white' : 'text-gray-600'}">${step.label}</p>${isCurrent ? '<p class="text-xs text-[#d4af37]">Current Status</p>' : ''}</div></div>`;
             });
 
-            resBox.innerHTML = `
-                <div class="bg-[#d4af37]/10 border border-[#d4af37]/20 rounded-xl p-4 mb-6">
-                    <p class="text-xs text-[#d4af37] uppercase tracking-wider">Device</p>
-                    <p class="text-xl font-bold text-white">${sanitize(o.device_model)}</p>
-                    <p class="text-sm text-gray-400 mt-1">Customer: ${sanitize(o.customer_name)}</p>
-                </div>
-                <div class="space-y-4 pl-2">
-                    ${timelineHtml}
-                </div>
-            `;
+            let revisionHtml = '';
+            if (o.revision_status === 'Pending Customer') {
+                revisionHtml = `<div class="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 mb-6 text-center"><p class="text-yellow-400 font-bold mb-2">Revision Required</p><p class="text-white mb-1">Tech recommends: $${o.revised_cost}</p><p class="text-gray-400 text-sm mb-4">${o.issue}</p><div class="flex gap-3 justify-center"><button onclick="approveRevision('${o.id}')" class="bg-emerald-500 hover:bg-emerald-400 text-white px-6 py-2 rounded-lg font-semibold">Approve</button><button onclick="rejectRevision('${o.id}')" class="bg-red-500 hover:bg-red-400 text-white px-6 py-2 rounded-lg font-semibold">Reject</button></div></div>`;
+            } else if (o.revision_status === 'Approved') {
+                revisionHtml = `<div class="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 mb-6 text-center"><p class="text-emerald-400 font-bold">Revised Estimate Approved ($${o.repair_cost})</p></div>`;
+            } else if (o.revision_status === 'Rejected') {
+                revisionHtml = `<div class="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6 text-center"><p class="text-red-400 font-bold">Revised Estimate Rejected. Phone returning unrepaired.</p></div>`;
+            }
+
+            resBox.innerHTML = `<div class="bg-[#d4af37]/10 border border-[#d4af37]/20 rounded-xl p-4 mb-6"><p class="text-xs text-[#d4af37] uppercase tracking-wider">Device</p><p class="text-xl font-bold text-white">${sanitize(o.device_model)}</p><p class="text-sm text-gray-400 mt-1">Customer: ${sanitize(o.customer_name)}</p></div>${revisionHtml}<div class="space-y-4 pl-2">${timelineHtml}</div>`;
             resBox.classList.remove('hidden');
-
-        } catch (err) {
-            errBox.innerText = "Network error. Please try again.";
-            errBox.classList.remove('hidden');
-        }
+        } catch (err) { errBox.innerText = "Network error."; errBox.classList.remove('hidden'); }
     }
 
-    function showApp() {
-        document.getElementById('loginView').classList.add('hidden');
-        document.getElementById('appView').classList.remove('hidden');
-        document.getElementById('userNameDisplay').innerText = currentUser.username;
-        document.getElementById('userRoleDisplay').innerText = currentUser.role.toUpperCase() + ' PORTAL';
-        fetchOrders();
+    async function approveRevision(id) {
+        await fetch(`/api/public/revise/${id}/approve`, { method: 'PATCH' });
+        alert("Revision approved! The tech will proceed."); trackOrder();
+    }
+    async function rejectRevision(id) {
+        await fetch(`/api/public/revise/${id}/reject`, { method: 'PATCH' });
+        alert("Revision rejected. The phone will be returned."); trackOrder();
     }
 
-    // --- HELPER FUNCTIONS ---
     function updateEstimate() {
         const model = document.getElementById('m_deviceModel').value;
         const select = document.getElementById('m_repairType');
         const device = PRICING_MATRIX[model];
         if (!device) return;
-
-        let totalCost = 0;
-        let selectedItems = [];
-        
+        let totalCost = 0; let selectedItems = [];
         for (let i = 0; i < select.options.length; i++) {
             if (select.options[i].selected) {
                 const type = select.options[i].value;
                 if (type === 'back_glass' && device.back_glass === null) {
                     alert("Back glass requires Full Device enclosure. Auto-selecting Full Device.");
                     select.options[i].selected = false;
-                    document.getElementById('full_device_option') ? document.getElementById('full_device_option').selected = true : select.value = 'full_device';
-                    updateEstimate();
-                    return;
+                    for (let j = 0; j < select.options.length; j++) { if (select.options[j].value === 'full_device') select.options[j].selected = true; }
+                    updateEstimate(); return;
                 }
                 totalCost += device[type];
                 selectedItems.push(select.options[i].text);
             }
         }
-        
         document.getElementById('m_repairCost').value = totalCost;
-        // Store the comma-separated string in a hidden field or directly use it on submit
         window.m_repairItems = selectedItems.join(', ');
     }
 
-    function sanitize(str) {
-        if (!str) return "";
-        return String(str).replace(/[&<>"']/g, function (m) {
-            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
-        });
-    }
+    function sanitize(str) { if (!str) return ""; return String(str).replace(/[&<>"']/g, function (m) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]; }); }
 
     function nextStep(step) {
         document.getElementById('wizard-step-1').classList.add('hidden');
@@ -463,8 +387,7 @@
         document.getElementById(`wizard-step-${step}`).classList.remove('hidden');
         for (let i = 1; i <= 3; i++) {
             const dot = document.getElementById(`step-dot-${i}`);
-            dot.classList.remove('step-active', 'step-completed');
-            dot.classList.add('text-gray-500');
+            dot.classList.remove('step-active', 'step-completed'); dot.classList.add('text-gray-500');
             if (i < step) { dot.classList.add('step-completed'); dot.innerHTML = `✓`; }
             else if (i === step) { dot.classList.add('step-active'); dot.innerText = i; }
             else { dot.innerText = i; }
@@ -478,24 +401,19 @@
         try {
             videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: true });
             const videoEl = mode === 'intake' ? 'diagVideoPreview' : 'techVideoPreview';
-            const btnStart = mode === 'intake' ? 'btnStartCam' : 'btnTechStartCam';
-            const btnRec = mode === 'intake' ? 'btnRec' : 'btnTechRec';
-            const statusEl = mode === 'intake' ? 'recStatus' : 'techRecStatus';
             document.getElementById(videoEl).srcObject = videoStream;
             document.getElementById(videoEl).classList.remove('hidden');
-            document.getElementById(btnStart).classList.add('hidden');
-            document.getElementById(btnRec).classList.remove('hidden');
-            document.getElementById(btnRec).classList.add('flex');
-            document.getElementById(statusEl).innerText = "Camera ready.";
+            document.getElementById(mode === 'intake' ? 'btnStartCam' : 'btnTechStartCam').classList.add('hidden');
+            document.getElementById(mode === 'intake' ? 'btnRec' : 'btnTechRec').classList.remove('hidden');
+            document.getElementById(mode === 'intake' ? 'btnRec' : 'btnTechRec').classList.add('flex');
+            document.getElementById(mode === 'intake' ? 'recStatus' : 'techRecStatus').innerText = "Camera ready.";
         } catch (err) { alert("Camera access denied."); }
     }
 
     function startRecording() {
-        recordedChunks = [];
-        mediaRecorder = new MediaRecorder(videoStream);
+        recordedChunks = []; mediaRecorder = new MediaRecorder(videoStream);
         mediaRecorder.ondataavailable = (e) => e.data.size > 0 && recordedChunks.push(e.data);
-        mediaRecorder.onstop = uploadVideo;
-        mediaRecorder.start();
+        mediaRecorder.onstop = uploadVideo; mediaRecorder.start();
         const isIntake = videoContext.mode === 'intake';
         document.getElementById(isIntake ? 'btnRec' : 'btnTechRec').classList.add('hidden');
         document.getElementById(isIntake ? 'btnStop' : 'btnTechStop').classList.remove('hidden');
@@ -509,33 +427,27 @@
 
     async function uploadVideo() {
         const blob = new Blob(recordedChunks, { type: 'video/webm' });
-        const formData = new FormData();
-        formData.append('video', blob, 'diagnostic.webm');
+        const formData = new FormData(); formData.append('video', blob, 'video.webm');
         try {
             const res = await fetch('/api/upload-video', { method: 'POST', body: formData });
             const data = await res.json();
             if (data.success) {
-                const isIntake = videoContext.mode === 'intake';
                 videoStream.getTracks().forEach(track => track.stop());
-                if (isIntake) {
-                    uploadedVideoUrl = data.videoUrl;
-                    document.getElementById('btnRec').classList.remove('hidden');
+                if (isHandoverMode) {
+                    await fetch(`/api/orders/${handoverContext.orderId}/handover`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ videoUrl: data.videoUrl }) });
+                    isHandoverMode = false; closeModal('techVideoModal'); fetchOrders();
+                } else if (videoContext.mode === 'intake') {
+                    uploadedVideoUrl = data.videoUrl; document.getElementById('btnRec').classList.remove('hidden');
                 } else {
-                    await fetch(`/api/orders/${videoContext.orderId}/tech-video`, {
-                        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ type: videoContext.type, videoUrl: data.videoUrl })
-                    });
-                    document.getElementById('btnTechStartCam').classList.remove('hidden');
-                    document.getElementById('techVideoPreview').classList.add('hidden');
-                    fetchOrders(); 
+                    await fetch(`/api/orders/${videoContext.orderId}/tech-video`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: videoContext.type, videoUrl: data.videoUrl }) });
+                    document.getElementById('btnTechStartCam').classList.remove('hidden'); document.getElementById('techVideoPreview').classList.add('hidden'); fetchOrders(); 
                 }
             }
         } catch (err) { alert("Upload failed."); }
     }
 
     async function openPhotoModal(orderId, type) {
-        photoContext = { orderId, type };
-        openModal('driverPhotoModal');
+        photoContext = { orderId, type }; openModal('driverPhotoModal');
         try {
             photoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
             document.getElementById('driverPhotoPreview').srcObject = photoStream;
@@ -545,25 +457,17 @@
     }
 
     async function capturePhoto() {
-        const video = document.getElementById('driverPhotoPreview');
-        const canvas = document.getElementById('photoCanvas');
-        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-        canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-        const imageBase64 = canvas.toDataURL('image/png');
-        photoStream.getTracks().forEach(track => track.stop());
+        const video = document.getElementById('driverPhotoPreview'); const canvas = document.getElementById('photoCanvas');
+        canvas.width = video.videoWidth; canvas.height = video.videoHeight; canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageBase64 = canvas.toDataURL('image/png'); photoStream.getTracks().forEach(track => track.stop());
         try {
-            await fetch(`/api/orders/${photoContext.orderId}/driver-image`, {
-                method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ type: photoContext.type, imageBase64 })
-            });
-            closeModal('driverPhotoModal');
-            fetchOrders();
+            await fetch(`/api/orders/${photoContext.orderId}/driver-image`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: photoContext.type, imageBase64 }) });
+            closeModal('driverPhotoModal'); fetchOrders();
         } catch (err) { alert("Failed to save photo."); }
     }
 
     function openEvidenceModal(orderId) {
-        const o = orders.find(o => o.id === orderId);
-        if (!o) return;
+        const o = orders.find(o => o.id === orderId); if (!o) return;
         document.getElementById('evSubtitle').innerText = `Order: ${o.id} • Customer: ${o.customer_name}`;
         const renderMedia = (url, type) => {
             if (!url) return `<div class="bg-black/30 border border-dashed border-white/10 rounded-xl p-4 text-center text-xs text-gray-600 italic">Not Recorded</div>`;
@@ -571,25 +475,14 @@
             if (type === 'img') return `<img src="${url}" class="w-full rounded-xl border border-white/10">`;
         };
         const html = `
-            <div class="bg-[#d4af37]/10 border border-[#d4af37]/20 rounded-xl p-4 flex justify-between items-center">
-                <div><p class="text-xs text-[#d4af37]">Drop-off</p><p class="text-white font-bold">${new Date(o.created_at).toLocaleString()}</p></div>
-                <div class="text-right"><p class="text-xs text-[#d4af37]">Cost</p><p class="text-white font-bold">$${o.repair_cost}</p></div>
-            </div>
+            <div class="bg-[#d4af37]/10 border border-[#d4af37]/20 rounded-xl p-4 flex justify-between items-center"><div><p class="text-xs text-[#d4af37]">Drop-off</p><p class="text-white font-bold">${new Date(o.created_at).toLocaleString()}</p></div><div class="text-right"><p class="text-xs text-[#d4af37]">Cost</p><p class="text-white font-bold">$${o.repair_cost}</p></div></div>
             <div><h4 class="text-sm text-gray-400 mb-3">Signature</h4>${renderMedia(o.signature_url, 'img')}</div>
             <div><h4 class="text-sm text-gray-400 mb-3">Cashier Video</h4>${renderMedia(o.diag_video_url, 'video')}</div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div><h4 class="text-sm text-gray-400 mb-3">Tech Pre-Repair</h4>${renderMedia(o.tech_pre_repair_video_url, 'video')}</div>
-                <div><h4 class="text-sm text-gray-400 mb-3">Tech Post-Repair</h4>${renderMedia(o.tech_post_repair_video_url, 'video')}</div>
-            </div>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div><h4 class="text-sm text-gray-400 mb-3">Drv Station Pick</h4>${renderMedia(o.driver_station_pickup_img, 'img')}</div>
-                <div><h4 class="text-sm text-gray-400 mb-3">Drv Tech Drop</h4>${renderMedia(o.driver_tech_dropoff_img, 'img')}</div>
-                <div><h4 class="text-sm text-gray-400 mb-3">Drv Tech Pick</h4>${renderMedia(o.driver_tech_pickup_img, 'img')}</div>
-                <div><h4 class="text-sm text-gray-400 mb-3">Drv Station Drop</h4>${renderMedia(o.driver_station_dropoff_img, 'img')}</div>
-            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><h4 class="text-sm text-gray-400 mb-3">Tech Pre-Repair</h4>${renderMedia(o.tech_pre_repair_video_url, 'video')}</div><div><h4 class="text-sm text-gray-400 mb-3">Tech Post-Repair</h4>${renderMedia(o.tech_post_repair_video_url, 'video')}</div></div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4"><div><h4 class="text-sm text-gray-400 mb-3">Drv Station Pick</h4>${renderMedia(o.driver_station_pickup_img, 'img')}</div><div><h4 class="text-sm text-gray-400 mb-3">Drv Tech Drop</h4>${renderMedia(o.driver_tech_dropoff_img, 'img')}</div><div><h4 class="text-sm text-gray-400 mb-3">Drv Tech Pick</h4>${renderMedia(o.driver_tech_pickup_img, 'img')}</div><div><h4 class="text-sm text-gray-400 mb-3">Drv Station Drop</h4>${renderMedia(o.driver_station_dropoff_img, 'img')}</div></div>
+            <div><h4 class="text-sm text-gray-400 mb-3">Cashier Handover & Payment Video</h4>${renderMedia(o.handover_video_url, 'video')}</div>
         `;
-        document.getElementById('evContent').innerHTML = html;
-        openModal('evidenceModal');
+        document.getElementById('evContent').innerHTML = html; openModal('evidenceModal');
     }
 
     function getPos(e) { const r = sigCanvas.getBoundingClientRect(); return { x: (e.clientX || e.pageX) - r.left, y: (e.clientY || e.pageY) - r.top }; }
@@ -599,122 +492,59 @@
 
     async function fetchOrders() {
         try {
-            const res = await fetch('/api/orders');
-            if (res.status === 401) { logout(); return; }
-            orders = await res.json();
-            renderView();
+            const res = await fetch('/api/orders'); if (res.status === 401) { logout(); return; }
+            orders = await res.json(); renderView();
         } catch (err) { document.getElementById('view-container').innerText = "Error loading data."; }
     }
 
-    async function advanceOrder(id) {
-        await fetch(`/api/orders/${id}/advance`, { method: 'PATCH' });
-        fetchOrders();
-    }
+    async function advanceOrder(id) { await fetch(`/api/orders/${id}/advance`, { method: 'PATCH' }); fetchOrders(); }
 
     document.getElementById('intakeForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = sigCanvas.width; tempCanvas.height = sigCanvas.height;
-        const tempCtx = tempCanvas.getContext('2d');
-        tempCtx.fillStyle = "#ffffff"; tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-        tempCtx.drawImage(sigCanvas, 0, 0);
+        const tempCanvas = document.createElement('canvas'); tempCanvas.width = sigCanvas.width; tempCanvas.height = sigCanvas.height;
+        const tempCtx = tempCanvas.getContext('2d'); tempCtx.fillStyle = "#ffffff"; tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height); tempCtx.drawImage(sigCanvas, 0, 0);
         const signatureBase64 = tempCanvas.toDataURL('image/png');
         try {
             const res = await fetch('/api/orders', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    customerName: m_customerName.value, customerPhone: m_customerPhone.value,
-                    deviceModel: m_deviceModel.value, issue: `${m_repairType.value} - ${m_issue.value}`,
-                    repairCost: m_repairCost.value, signatureBase64, diagVideoUrl: uploadedVideoUrl
+                    customerName: m_customerName.value, customerPhone: m_customerPhone.value, deviceModel: m_deviceModel.value,
+                    repairItems: window.m_repairItems || 'No specific repair selected', repairCost: m_repairCost.value, signatureBase64, diagVideoUrl: uploadedVideoUrl
                 })
             });
             if(res.ok) { closeModal('intakeModal'); uploadedVideoUrl = null; fetchOrders(); }
-        } catch (err) { alert("Network error."); }
+            else { const err = await res.json(); alert("Error: " + err.error); }
+        } catch (err) { alert("Network error submitting order: " + err.message); }
     });
 
     function openModal(id) { document.getElementById(id).classList.remove('hidden'); document.getElementById(id).classList.add('flex'); if(id === 'intakeModal') { nextStep(1); updateEstimate(); } }
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); }
 
-        // --- PHASE 2: TECH REVISION LOGIC ---
-    function openReviseModal(orderId) {
-        document.getElementById('reviseOrderId').value = orderId;
-        openModal('techReviseModal');
+    function openTechVideoModal(orderId, type) {
+        activeTechOrderId = orderId; activeTechType = type; isHandoverMode = false;
+        document.getElementById('techVideoTitle').innerText = type === 'pre' ? 'Pre-Repair Video' : 'Post-Repair Video';
+        document.getElementById('techVideoSubtitle').innerText = `Order: ${orderId}`; openModal('techVideoModal');
     }
 
+    function openReviseModal(orderId) { document.getElementById('reviseOrderId').value = orderId; openModal('techReviseModal'); }
     document.getElementById('reviseForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const id = document.getElementById('reviseOrderId').value;
-        const revisedCost = document.getElementById('reviseCost').value;
-        const revisedNotes = document.getElementById('reviseNotes').value;
-        
-        await fetch(`/api/orders/${id}/revise`, {
-            method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ revisedCost, revisedNotes })
-        });
-        closeModal('techReviseModal');
-        fetchOrders();
+        const id = document.getElementById('reviseOrderId').value; const revisedCost = document.getElementById('reviseCost').value; const revisedNotes = document.getElementById('reviseNotes').value;
+        await fetch(`/api/orders/${id}/revise`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ revisedCost, revisedNotes }) });
+        closeModal('techReviseModal'); fetchOrders();
     });
 
     async function markNotRepairable(orderId) {
         if (!confirm("Mark this device as Not Repairable? It will be sent back to the station at no charge.")) return;
-        await fetch(`/api/orders/${orderId}/not-repairable`, { method: 'PATCH' });
-        fetchOrders();
+        await fetch(`/api/orders/${orderId}/not-repairable`, { method: 'PATCH' }); fetchOrders();
     }
 
-    // --- PHASE 2: CASHIER HANDOVER VIDEO LOGIC ---
-    let handoverContext = { orderId: null };
     function openHandoverVideo(orderId) {
-        handoverContext.orderId = orderId;
+        handoverContext.orderId = orderId; isHandoverMode = true;
         document.getElementById('techVideoTitle').innerText = "Customer Handover & Payment Video";
-        document.getElementById('techVideoSubtitle').innerText = "Record video of phone handover and cash receipt.";
-        openModal('techVideoModal');
+        document.getElementById('techVideoSubtitle').innerText = "Record video of phone handover and cash receipt."; openModal('techVideoModal');
     }
 
-    // Override the uploadVideo function to handle handover videos
-    const originalUploadVideo = uploadVideo;
-    uploadVideo = async function() {
-        const blob = new Blob(recordedChunks, { type: 'video/webm' });
-        const formData = new FormData();
-        formData.append('video', blob, 'handover.webm');
-        try {
-            const res = await fetch('/api/upload-video', { method: 'POST', body: formData });
-            const data = await res.json();
-            if (data.success) {
-                videoStream.getTracks().forEach(track => track.stop());
-                
-                // If this is a handover video, complete the order
-                if (document.getElementById('techVideoTitle').innerText.includes("Handover")) {
-                    await fetch(`/api/orders/${handoverContext.orderId}/handover`, {
-                        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ videoUrl: data.videoUrl })
-                    });
-                    closeModal('techVideoModal');
-                    fetchOrders();
-                } else if (videoContext.mode === 'intake') {
-                    uploadedVideoUrl = data.videoUrl;
-                    document.getElementById('btnRec').classList.remove('hidden');
-                } else {
-                    // Standard Tech pre/post video
-                    await fetch(`/api/orders/${videoContext.orderId}/tech-video`, {
-                        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ type: videoContext.type, videoUrl: data.videoUrl })
-                    });
-                    document.getElementById('btnTechStartCam').classList.remove('hidden');
-                    document.getElementById('techVideoPreview').classList.add('hidden');
-                    fetchOrders(); 
-                }
-            }
-        } catch (err) { alert("Upload failed."); }
-    }
-    
-    function openTechVideoModal(orderId, type) {
-        activeTechOrderId = orderId; activeTechType = type;
-        document.getElementById('techVideoTitle').innerText = type === 'pre' ? 'Pre-Repair Video' : 'Post-Repair Video';
-        document.getElementById('techVideoSubtitle').innerText = `Order: ${orderId}`;
-        openModal('techVideoModal');
-    }
-
-    // --- ROLE-SPECIFIC RENDERING ---
     function renderView() {
         const c = document.getElementById('view-container');
         if(currentUser.role === 'owner') c.innerHTML = renderOwner();
@@ -724,6 +554,10 @@
     }
 
     function renderStatCard(label, val, color) { return `<div class="bg-white/5 border border-white/5 p-4 md:p-6 rounded-2xl"><p class="text-xs text-gray-500 uppercase mb-2">${label}</p><h3 class="text-xl md:text-2xl font-bold ${color}">${val}</h3></div>`; }
+    function renderTrackingTable(list, role) {
+        if (list.length === 0) return `<p class="text-gray-600 text-sm italic mt-4">No history yet.</p>`;
+        return `<div class="glass rounded-2xl p-4 md:p-6 mt-8 overflow-x-auto"><h3 class="text-lg font-bold mb-4">History & Live Status Tracking</h3><table class="w-full text-sm min-w-[600px]"><thead class="text-gray-500 uppercase text-xs border-b border-white/5"><tr><th class="text-left py-3">Order ID</th><th class="text-left">Customer</th><th class="text-left">Device</th><th class="text-left">Current Live Status</th><th class="text-left">Date</th></tr></thead><tbody class="divide-y divide-white/5">${list.map(o => `<tr><td class="py-3 text-gray-400 font-mono">${sanitize(o.id)}</td><td>${sanitize(o.customer_name)}</td><td>${sanitize(o.device_model)}</td><td><span class="text-xs bg-[#d4af37]/10 text-[#d4af37] px-2 py-1 rounded">${sanitize(o.status.replace(/_/g, ' '))}</span></td><td class="text-gray-500 text-xs">${new Date(o.created_at).toLocaleDateString()}</td></tr>`).join('')}</tbody></table></div>`;
+    }
     
     function renderOwner() {
         const completed = orders.filter(o => o.status === 'COMPLETED');
@@ -733,72 +567,18 @@
             ${renderStatCard('Business Profit', `$${completed.reduce((a,b) => a + b.business_cut, 0)}`, 'text-[#d4af37]')}
             ${renderStatCard('Active Repairs', orders.filter(o => o.status !== 'COMPLETED').length, 'text-white')}
         </div>
-        <div class="glass rounded-2xl p-4 md:p-6 overflow-x-auto">
-            <h3 class="text-lg font-bold mb-4">All Orders & Dispute Center</h3>
-            <table class="w-full text-sm min-w-[500px]">
-                <thead class="text-gray-500 uppercase text-xs border-b border-white/5"><tr><th class="text-left py-3">Order ID</th><th class="text-left">Customer</th><th class="text-left">Device</th><th class="text-left">Status</th><th class="text-right">Evidence</th></tr></thead>
-                <tbody class="divide-y divide-white/5">
-                    ${orders.map(o => `<tr><td class="py-3 text-gray-400 font-mono">${sanitize(o.id)}</td><td>${sanitize(o.customer_name)}</td><td>${sanitize(o.device_model)}</td><td><span class="text-xs bg-white/5 px-2 py-1 rounded">${sanitize(o.status.replace(/_/g, ' '))}</span></td><td class="text-right"><button onclick="openEvidenceModal('${o.id}')" class="btn-gold px-3 py-1 rounded-lg text-xs whitespace-nowrap">View Evidence</button></td></tr>`).join('')}
-                </tbody>
-            </table>
-        </div>`;
-    }
-
-    // --- HELPER: HISTORY & LIVE STATUS TABLE ---
-    function renderTrackingTable(list, role) {
-        if (list.length === 0) return `<p class="text-gray-600 text-sm italic mt-4">No history yet.</p>`;
-        return `
-        <div class="glass rounded-2xl p-4 md:p-6 mt-8 overflow-x-auto">
-            <h3 class="text-lg font-bold mb-4">History & Live Status Tracking</h3>
-            <table class="w-full text-sm min-w-[600px]">
-                <thead class="text-gray-500 uppercase text-xs border-b border-white/5">
-                    <tr>
-                        <th class="text-left py-3">Order ID</th>
-                        <th class="text-left">Customer</th>
-                        <th class="text-left">Device</th>
-                        <th class="text-left">Current Live Status</th>
-                        <th class="text-left">Date</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-white/5">
-                    ${list.map(o => `
-                        <tr>
-                            <td class="py-3 text-gray-400 font-mono">${sanitize(o.id)}</td>
-                            <td>${sanitize(o.customer_name)}</td>
-                            <td>${sanitize(o.device_model)}</td>
-                            <td><span class="text-xs bg-[#d4af37]/10 text-[#d4af37] px-2 py-1 rounded">${sanitize(o.status.replace(/_/g, ' '))}</span></td>
-                            <td class="text-gray-500 text-xs">${new Date(o.created_at).toLocaleDateString()}</td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        </div>`;
-    }
-
-    function renderOwner() {
-        const completed = orders.filter(o => o.status === 'COMPLETED');
-        return `<div class="mb-6 md:mb-10"><h2 class="text-3xl md:text-4xl font-bold mb-2">Company Overview</h2></div>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-            ${renderStatCard('Total Revenue', `$${completed.reduce((a,b) => a + b.repair_cost, 0)}`, 'text-emerald-400')}
-            ${renderStatCard('Business Profit', `$${completed.reduce((a,b) => a + b.business_cut, 0)}`, 'text-[#d4af37]')}
-            ${renderStatCard('Active Repairs', orders.filter(o => o.status !== 'COMPLETED').length, 'text-white')}
-        </div>
-        <div class="glass rounded-2xl p-4 md:p-6 overflow-x-auto">
-            <h3 class="text-lg font-bold mb-4">All Orders & Dispute Center</h3>
-            <table class="w-full text-sm min-w-[500px]">
-                <thead class="text-gray-500 uppercase text-xs border-b border-white/5"><tr><th class="text-left py-3">Order ID</th><th class="text-left">Customer</th><th class="text-left">Device</th><th class="text-left">Status</th><th class="text-right">Evidence</th></tr></thead>
-                <tbody class="divide-y divide-white/5">
-                    ${orders.map(o => `<tr><td class="py-3 text-gray-400 font-mono">${sanitize(o.id)}</td><td>${sanitize(o.customer_name)}</td><td>${sanitize(o.device_model)}</td><td><span class="text-xs bg-white/5 px-2 py-1 rounded">${sanitize(o.status.replace(/_/g, ' '))}</span></td><td class="text-right"><button onclick="openEvidenceModal('${o.id}')" class="btn-gold px-3 py-1 rounded-lg text-xs whitespace-nowrap">View Evidence</button></td></tr>`).join('')}
-                </tbody>
-            </table>
-        </div>`;
+        <div class="glass rounded-2xl p-4 md:p-6 overflow-x-auto"><h3 class="text-lg font-bold mb-4">All Orders & Dispute Center</h3><table class="w-full text-sm min-w-[500px]"><thead class="text-gray-500 uppercase text-xs border-b border-white/5"><tr><th class="text-left py-3">Order ID</th><th class="text-left">Customer</th><th class="text-left">Device</th><th class="text-left">Status</th><th class="text-right">Evidence</th></tr></thead><tbody class="divide-y divide-white/5">${orders.map(o => `<tr><td class="py-3 text-gray-400 font-mono">${sanitize(o.id)}</td><td>${sanitize(o.customer_name)}</td><td>${sanitize(o.device_model)}</td><td><span class="text-xs bg-white/5 px-2 py-1 rounded">${sanitize(o.status.replace(/_/g, ' '))}</span></td><td class="text-right"><button onclick="openEvidenceModal('${o.id}')" class="btn-gold px-3 py-1 rounded-lg text-xs whitespace-nowrap">View Evidence</button></td></tr>`).join('')}</tbody></table></div>`;
     }
 
     function renderCashier() {
         const toDriver = orders.filter(o => o.status === 'DROPPED_AT_STATION');
         const toCust = orders.filter(o => o.status === 'READY_FOR_CUSTOMER' && !o.handover_video_url);
-        const card = (o, txt, cls) => `<div class="bg-black/30 border border-white/10 rounded-xl p-4 md:p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><div><h4 class="font-semibold text-white">${sanitize(o.device_model)}</h4><p class="text-sm text-gray-500">${sanitize(o.customer_name)} • $${o.repair_cost}</p></div><button onclick="${cls.includes('btn-gold') ? `openHandoverVideo('${o.id}')` : `advanceOrder('${o.id}')`}" class="${cls} px-4 py-2 rounded-lg text-xs font-medium w-full sm:w-auto text-center">${txt}</button></div>`;
-        return `<div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-6 md:mb-10 gap-4"><div><h2 class="text-3xl md:text-4xl font-bold mb-2">Cashier Portal</h2></div><button onclick="openModal('intakeModal')" class="btn-gold px-6 py-3 rounded-xl text-sm w-full sm:w-auto">New Intake</button></div><div class="grid grid-cols-1 lg:grid-cols-2 gap-6"><div><h3 class="text-sm uppercase tracking-wider text-gray-400 mb-4">Hand Off to Driver</h3><div class="space-y-3">${toDriver.map(o => card(o, 'Mark Picked Up', 'bg-white/5 hover:bg-white/10 text-white border border-white/10')).join('') || '<p class="text-gray-600 text-sm italic">None waiting.</p>'}</div></div><div><h3 class="text-sm uppercase tracking-wider text-gray-400 mb-4">Customer Pickup (Video Required)</h3><div class="space-y-3">${toCust.map(o => card(o, 'Record Handover & Pay', 'btn-gold')).join('') || '<p class="text-gray-600 text-sm italic">None ready.</p>'}</div></div></div>${renderTrackingTable(orders.filter(o => o.status !== 'DROPPED_AT_STATION' && o.status !== 'READY_FOR_CUSTOMER'), 'cashier')}`;
+        const card = (o, txt, cls, action) => `<div class="bg-black/30 border border-white/10 rounded-xl p-4 md:p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><div><h4 class="font-semibold text-white">${sanitize(o.device_model)}</h4><p class="text-sm text-gray-500">${sanitize(o.customer_name)} • $${o.repair_cost}</p></div><button onclick="${action}" class="${cls} px-4 py-2 rounded-lg text-xs font-medium w-full sm:w-auto text-center">${txt}</button></div>`;
+        return `<div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-6 md:mb-10 gap-4"><div><h2 class="text-3xl md:text-4xl font-bold mb-2">Cashier Portal</h2></div><button onclick="openModal('intakeModal')" class="btn-gold px-6 py-3 rounded-xl text-sm w-full sm:w-auto">New Intake</button></div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div><h3 class="text-sm uppercase tracking-wider text-gray-400 mb-4">Hand Off to Driver</h3><div class="space-y-3">${toDriver.map(o => card(o, 'Mark Picked Up', 'bg-white/5 hover:bg-white/10 text-white border border-white/10', `advanceOrder('${o.id}')`)).join('') || '<p class="text-gray-600 text-sm italic">None waiting.</p>'}</div></div>
+            <div><h3 class="text-sm uppercase tracking-wider text-gray-400 mb-4">Customer Pickup (Video Required)</h3><div class="space-y-3">${toCust.map(o => card(o, 'Record Handover & Pay', 'btn-gold', `openHandoverVideo('${o.id}')`)).join('') || '<p class="text-gray-600 text-sm italic">None ready.</p>'}</div></div>
+        </div>${renderTrackingTable(orders.filter(o => o.status !== 'DROPPED_AT_STATION' && o.status !== 'READY_FOR_CUSTOMER'), 'cashier')}`;
     }
 
     function renderDriver() {
@@ -808,16 +588,11 @@
         const dropStation = orders.filter(o => o.status === 'DRIVER_TO_STATION');
         const getPhotoBtn = (o, type) => o[`driver_${type}_img`] ? `<span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full border border-emerald-500/20">Photo ✓</span>` : `<button onclick="openPhotoModal('${o.id}', '${type}')" class="text-[10px] bg-white/5 hover:bg-white/10 text-white px-2 py-1 rounded-full border border-white/10">Take Photo</button>`;
         const card = (o, type, txt) => `<div class="bg-black/30 border border-white/10 rounded-xl p-4 md:p-5 flex flex-col gap-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><div><h4 class="font-semibold text-white">${sanitize(o.device_model)}</h4><p class="text-sm text-gray-500">${sanitize(o.customer_name)}</p></div><button onclick="advanceOrder('${o.id}')" class="bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-lg text-xs font-medium border border-white/10 w-full sm:w-auto text-center">${txt}</button></div><div class="flex gap-2 border-t border-white/5 pt-3">${getPhotoBtn(o, type)}</div></div>`;
-        
-        // Driver History: Orders currently at tech, repairing, or completed
-        const history = orders.filter(o => !['DROPPED_AT_STATION', 'DRIVER_TO_TECH', 'REPAIR_DONE', 'DRIVER_TO_STATION'].includes(o.status));
-        
         return `<div class="mb-6 md:mb-10"><h2 class="text-3xl md:text-4xl font-bold mb-2">Driver Routes</h2></div>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div><h3 class="text-sm uppercase tracking-wider text-blue-400 mb-4">Station Pickups</h3><div class="space-y-3">${pickStation.map(o => card(o, 'station_pickup', 'Picked Up')).join('') || '<p class="text-gray-600 text-sm italic">None scheduled.</p>'}</div><h3 class="text-sm uppercase tracking-wider text-amber-400 mb-4 mt-8">Drop to Tech</h3><div class="space-y-3">${dropTech.map(o => card(o, 'tech_dropoff', 'Dropped at Tech')).join('') || '<p class="text-gray-600 text-sm italic">None.</p>'}</div></div>
             <div><h3 class="text-sm uppercase tracking-wider text-purple-400 mb-4">Tech Pickups</h3><div class="space-y-3">${pickTech.map(o => card(o, 'tech_pickup', 'Picked Up')).join('') || '<p class="text-gray-600 text-sm italic">None ready.</p>'}</div><h3 class="text-sm uppercase tracking-wider text-emerald-400 mb-4 mt-8">Drop to Station</h3><div class="space-y-3">${dropStation.map(o => card(o, 'station_dropoff', 'Dropped at Station')).join('') || '<p class="text-gray-600 text-sm italic">None.</p>'}</div></div>
-        </div>
-        ${renderTrackingTable(history, 'driver')}`;
+        </div>${renderTrackingTable(orders.filter(o => !['DROPPED_AT_STATION', 'DRIVER_TO_TECH', 'REPAIR_DONE', 'DRIVER_TO_STATION'].includes(o.status)), 'driver')}`;
     }
 
     function renderTech() {
@@ -826,11 +601,9 @@
         const card = (o, txt) => {
             const preVidBtn = o.tech_pre_repair_video_url ? `<span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full border border-emerald-500/20">Pre-Repair ✓</span>` : `<button onclick="openTechVideoModal('${o.id}', 'pre')" class="text-[10px] bg-white/5 hover:bg-white/10 text-white px-2 py-1 rounded-full border border-white/10">Rec Pre-Repair</button>`;
             const postVidBtn = o.tech_post_repair_video_url ? `<span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full border border-emerald-500/20">Post-Repair ✓</span>` : `<button onclick="openTechVideoModal('${o.id}', 'post')" class="text-[10px] bg-white/5 hover:bg-white/10 text-white px-2 py-1 rounded-full border border-white/10">Rec Post-Repair</button>`;
-            
             const revisionBanner = o.revision_status === 'Pending Customer' ? `<div class="bg-yellow-500/10 text-yellow-400 text-xs px-3 py-2 rounded-lg mt-2 text-center">⏳ Waiting for Customer Approval ($${o.revised_cost})</div>` : '';
             const reviseBtn = o.status === 'REPAIRING' && o.revision_status !== 'Pending Customer' ? `<button onclick="openReviseModal('${o.id}')" class="text-[10px] bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 px-2 py-1 rounded-full border border-blue-500/20">Revise Estimate</button>` : '';
             const notRepBtn = o.status === 'REPAIRING' && o.revision_status !== 'Pending Customer' ? `<button onclick="markNotRepairable('${o.id}')" class="text-[10px] bg-red-500/10 text-red-400 hover:bg-red-500/20 px-2 py-1 rounded-full border border-red-500/20">Not Repairable</button>` : '';
-
             return `<div class="bg-black/30 border border-white/10 rounded-xl p-4 md:p-5 flex flex-col gap-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><div><h4 class="font-semibold text-white">${sanitize(o.device_model)}</h4><p class="text-sm text-gray-500">${sanitize(o.issue)}</p></div><button onclick="advanceOrder('${o.id}')" class="btn-gold px-4 py-2 rounded-lg text-xs font-medium w-full sm:w-auto text-center" ${o.revision_status === 'Pending Customer' ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>${txt}</button></div><div class="flex flex-wrap gap-2 border-t border-white/5 pt-3">${preVidBtn}${postVidBtn}${reviseBtn}${notRepBtn}</div>${revisionBanner}</div>`;
         };
         return `<div class="mb-6 md:mb-10"><h2 class="text-3xl md:text-4xl font-bold mb-2">Repair Queue</h2></div><div class="grid grid-cols-1 lg:grid-cols-2 gap-6"><div><h3 class="text-sm uppercase tracking-wider text-gray-400 mb-4">Incoming</h3><div class="space-y-3">${inc.map(o => card(o, 'Start Repair')).join('') || '<p class="text-gray-600 text-sm italic">Empty.</p>'}</div></div><div><h3 class="text-sm uppercase tracking-wider text-gray-400 mb-4">Repairing</h3><div class="space-y-3">${rep.map(o => card(o, 'Mark Repaired')).join('') || '<p class="text-gray-600 text-sm italic">Empty.</p>'}</div></div></div>${renderTrackingTable(orders.filter(o => !['AT_TECH', 'REPAIRING'].includes(o.status)), 'tech')}`;
