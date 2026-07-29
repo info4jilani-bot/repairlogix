@@ -15,8 +15,14 @@ app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '15mb' }));
 app.use(express.static('public'));
 
+// Secure Session Configuration
+const SESSION_SECRET = process.env.SESSION_SECRET;
+if (!SESSION_SECRET) {
+    console.error("FATAL ERROR: SESSION_SECRET environment variable is not set. App cannot start securely.");
+    process.exit(1); // Force crash if secret is missing
+}
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'repairlogix-super-secret-key-2026',
+    secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: { maxAge: 24 * 60 * 60 * 1000 }
@@ -86,7 +92,7 @@ const columns = [
     'diag_video_url', 'tech_pre_repair_video_url', 'tech_post_repair_video_url', 
     'driver_station_pickup_img', 'driver_tech_dropoff_img', 'driver_tech_pickup_img', 
     'driver_station_dropoff_img', 'cashier_id', 'revision_status', 'revised_cost', 
-    'handover_video_url', 'pickup_signature_url', 'pickup_selfie_url'
+        'handover_video_url', 'pickup_signature_url', 'pickup_selfie_url', 'sms_consent', 'photo_consent'
 ];
 columns.forEach(col => {
     try { db.exec(`ALTER TABLE orders ADD COLUMN ${col} ${col.includes('cost') || col.includes('id') ? 'INTEGER' : 'TEXT'}`); } catch (e) {}
@@ -208,8 +214,9 @@ app.get('/api/orders', requireAuth, (req, res) => {
 
 app.post('/api/orders', requireAuth, (req, res) => {
   try {
-    const { customerName, customerPhone, deviceModel, repairItems, repairCost, signatureBase64, diagVideoUrl } = req.body;
-    if (!customerName || !customerPhone || !deviceModel || !repairItems || !repairCost) return res.status(400).json({ error: "Missing fields" });
+        const { customerName, customerPhone, deviceModel, repairItems, repairCost, signatureBase64, diagVideoUrl, smsConsent, photoConsent } = req.body;
+      
+      if (!customerName || !customerPhone || !deviceModel || !repairItems || !repairCost) return res.status(400).json({ error: "Missing fields" });
 
     const payouts = calculatePayouts(repairCost);
     let signatureUrl = null;
@@ -223,10 +230,13 @@ app.post('/api/orders', requireAuth, (req, res) => {
     }
 
     const id = `RLX-${Date.now().toString(36).toUpperCase()}`;
+
     db.prepare(`
-      INSERT INTO orders (id, customer_name, customer_phone, device_model, issue, repair_cost, station_cut, cashier_cut, driver_cut, tech_cut, business_cut, signature_url, diag_video_url, cashier_id)
-      VALUES (@id, @customerName, @customerPhone, @deviceModel, @issue, @repairCost, @stationCut, @cashierCut, @driverCut, @techCut, @businessCut, @signatureUrl, @diagVideoUrl, @cashierId)
-    `).run({ id, customerName, customerPhone, deviceModel, issue: repairItems, ...payouts, signatureUrl, diagVideoUrl: diagVideoUrl || null, cashierId: req.session.user.id });
+      INSERT INTO orders (id, customer_name, customer_phone, device_model, issue, repair_cost, station_cut, cashier_cut, driver_cut, tech_cut, business_cut, signature_url, diag_video_url, cashier_id, sms_consent, photo_consent)
+      VALUES (@id, @customerName, @customerPhone, @deviceModel, @issue, @repairCost, @stationCut, @cashierCut, @driverCut, @techCut, @businessCut, @signatureUrl, @diagVideoUrl, @cashierId, @smsConsent, @photoConsent)
+    `).run({ id, customerName, customerPhone, deviceModel, issue: repairItems, ...payouts, signatureUrl, diagVideoUrl: diagVideoUrl || null, cashierId: req.session.user.id, smsConsent: smsConsent ? 1 : 0, photoConsent: photoConsent ? 1 : 0 });
+
+      
 
     logActivity(id, 'ORDER_CREATED', `Order created by ${req.session.user.username}. Est: $${repairCost}. Items: ${repairItems}`, req.session.user.username);
     if (signatureUrl) logActivity(id, 'MEDIA_UPLOADED', 'Customer signed estimate approval.', req.session.user.username);
