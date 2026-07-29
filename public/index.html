@@ -41,6 +41,8 @@
             <div id="loginError" class="text-red-400 text-sm hidden"></div>
             <button type="submit" class="btn-gold w-full py-3 rounded-xl font-semibold">Sign In</button>
         </form>
+        
+                <button onclick="openModal('privacyModal')" class="text-gray-500 hover:text-white text-xs mt-4 block mx-auto underline">Privacy Policy</button>
         <button onclick="showTracking()" class="text-gray-400 hover:text-[#d4af37] text-sm mt-6 flex items-center gap-2 mx-auto transition">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
             Track My Repair
@@ -85,6 +87,29 @@
     </div>
 </div>
 
+<!-- PRIVACY POLICY MODAL -->
+<div id="privacyModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[60] hidden items-center justify-center p-4">
+    <div class="glass rounded-3xl w-full max-w-lg p-8 relative max-h-[90vh] flex flex-col">
+        <div class="flex justify-between items-center mb-6"><h3 class="text-xl font-bold">Privacy Policy</h3><button onclick="closeModal('privacyModal')" class="text-gray-500 hover:text-white text-2xl">&times;</button></div>
+        <div class="space-y-4 text-sm text-gray-400 overflow-y-auto pr-2">
+            <p>RepairLogix ("we", "us", or "our") respects your privacy. This Privacy Policy explains how we collect, use, and protect your personal information when you use our device repair logistics services.</p>
+            <p class="text-white font-bold mt-4">1. Information We Collect</p>
+            <p>We collect your Name, Phone Number, Device Model, and details regarding the device's condition. We also collect visual evidence (diagnostic videos, repair videos, photos, and a "Proof of Possession" photo at pickup) and your digital signature authorizing repairs and payments.</p>
+            <p class="text-white font-bold mt-4">2. Purpose of Data Collection</p>
+            <p>Your data is collected strictly for operational logistics, payment processing, and dispute resolution. The visual evidence and signatures are captured to protect both the customer and RepairLogix against fraudulent claims, damage disputes, and chargebacks.</p>
+            <p class="text-white font-bold mt-4">3. Data Retention</p>
+            <p>M media evidence (videos, photos, signatures) and activity logs are retained for a period of 90 days after the completion of the repair to allow for the resolution of any potential payment disputes, after which they are permanently deleted from our servers.</p>
+            <p class="text-white font-bold mt-4">4. SMS Communications</p>
+            <p>By opting in, you consent to receive automated SMS notifications regarding your repair status. Standard message and data rates may apply. You may opt-out at any time by replying "STOP" to any message.</p>
+            <p class="text-white font-bold mt-4">5. Your Rights (CCPA)</p>
+            <p>If you are a California resident, you have the right to request access to or deletion of your personal information. To exercise these rights, please contact us at support@repairlogix.com.</p>
+            <p class="text-white font-bold mt-4">6. Biometric & Photo Consent (BIPA)</p>
+            <p>By checking the consent box at intake, you explicitly authorize RepairLogix to capture a "Proof of Possession" photo at the time of device pickup. This photo is used solely for the purpose of verifying device receipt and preventing fraud, is not used for facial recognition or biometric identification, and will be deleted within 90 days.</p>
+        </div>
+        <button onclick="closeModal('privacyModal')" class="btn-gold w-full py-3 rounded-xl font-semibold mt-6">I Acknowledge</button>
+    </div>
+</div>
+    
 <!-- CASHIER INTAKE MODAL -->
 <div id="intakeModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden items-center justify-center p-4">
     <div class="glass rounded-3xl w-full max-w-2xl p-4 md:p-8 relative max-h-[95vh] flex flex-col">
@@ -121,6 +146,16 @@
                     <div><label class="block text-xs uppercase tracking-wider text-gray-500 mb-2">Auto-Calc Repair Cost ($)</label><input type="number" id="m_repairCost" value="0" min="30" max="2000" required class="w-full bg-transparent text-3xl font-bold text-[#d4af37] outline-none border-b border-[#d4af37]/30 focus:border-[#d4af37] pb-1"></div>
                 </div>
                 <div><label class="block text-xs uppercase tracking-wider text-gray-500 mb-2">Specific Issue / Notes</label><textarea id="m_issue" required rows="2" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#d4af37]" placeholder="e.g., Severe shatter"></textarea></div>
+                               <div class="space-y-2 mt-4 bg-black/20 p-4 rounded-xl border border-white/5">
+                    <label class="flex items-start gap-2 text-xs text-gray-400">
+                        <input type="checkbox" id="m_smsConsent" required class="mt-1">
+                        <span>Customer opts-in to receive SMS status updates regarding their repair. Msg & data rates may apply. Reply STOP to cancel. See <a href="#" onclick="openModal('privacyModal'); return false;" class="text-[#d4af37] underline">Privacy Policy</a>.</span>
+                    </label>
+                    <label class="flex items-start gap-2 text-xs text-gray-400">
+                        <input type="checkbox" id="m_photoConsent" required class="mt-1">
+                        <span>Customer consents to a "Proof of Possession" photo at pickup to verify device receipt and prevent fraud. <a href="#" onclick="openModal('privacyModal'); return false;" class="text-[#d4af37] underline">Privacy Policy</a>.</span>
+                    </label>
+                </div>
                 <button type="button" onclick="nextStep(2)" class="btn-gold w-full py-3 rounded-xl font-semibold">Continue to Diagnostic →</button>
             </div>
             <div id="wizard-step-2" class="hidden space-y-4">
@@ -222,7 +257,12 @@
                 <div class="flex gap-3 pt-2"><button type="button" onclick="nextPickupStep(1)" class="btn-ghost flex-1 py-3 rounded-xl text-sm">Back</button><button type="button" onclick="nextPickupStep(3)" class="btn-gold flex-1 py-3 rounded-xl text-sm">Continue to Selfie →</button></div>
             </div>
             <div id="pickup-step-3" class="hidden space-y-4">
-                <p class="text-gray-400 text-sm">Capture a selfie of the customer holding the phone to finalize.</p>
+               
+                    
+                                  <p class="text-gray-400 text-sm">Capture a "Proof of Possession" photo of the customer holding the device to finalize. (Consent obtained at intake).</p>
+                
+                
+               
                 <div class="bg-black/40 rounded-xl p-4 flex flex-col items-center justify-center space-y-3 border border-white/10">
                     <video id="selfiePreview" autoplay muted playsinline class="w-full max-w-sm rounded-lg border border-white/10 hidden"></video>
                     <canvas id="selfieCanvas" class="hidden"></canvas>
@@ -560,10 +600,24 @@
         try {
             const res = await fetch('/api/orders', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
+                
+                
+
+
                 body: JSON.stringify({
-                    customerName: m_customerName.value, customerPhone: m_customerPhone.value, deviceModel: m_deviceModel.value,
-                    repairItems: window.m_repairItems || 'No specific repair selected', repairCost: m_repairCost.value, signatureBase64, diagVideoUrl: uploadedVideoUrl
+                    customerName: m_customerName.value, 
+                    customerPhone: m_customerPhone.value, 
+                    deviceModel: m_deviceModel.value,
+                    repairItems: window.m_repairItems || 'No specific repair selected', 
+                    repairCost: m_repairCost.value, 
+                    signatureBase64, 
+                    diagVideoUrl: uploadedVideoUrl,
+                    smsConsent: document.getElementById('m_smsConsent').checked,
+                    photoConsent: document.getElementById('m_photoConsent').checked
                 })
+
+
+                
             });
             if(res.ok) { closeModal('intakeModal'); uploadedVideoUrl = null; fetchOrders(); }
             else { const err = await res.json(); alert("Error: " + err.error); }
@@ -685,7 +739,9 @@
         selfieStream.getTracks().forEach(track => track.stop());
         document.getElementById('selfiePreview').classList.add('hidden');
         document.getElementById('btnCaptureSelfie').classList.add('hidden');
-        document.getElementById('selfieStatus').innerHTML = '<span class="text-emerald-400 font-bold">✓ Selfie Captured!</span>';
+        
+        
+                document.getElementById('selfieStatus').innerHTML = '<span class="text-emerald-400 font-bold">✓ Proof of Possession Captured!</span>';
         document.getElementById('btnSubmitPickup').classList.remove('hidden');
     }
 
