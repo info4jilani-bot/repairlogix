@@ -67,6 +67,8 @@ db.exec(`
     revision_status TEXT DEFAULT 'None',
     revised_cost INTEGER,
     handover_video_url TEXT,
+    pickup_signature_url TEXT,
+    pickup_selfie_url TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
   CREATE TABLE IF NOT EXISTS activity_logs (
@@ -79,8 +81,13 @@ db.exec(`
   )
 `);
 
-// Add columns if they don't exist
-const columns = ['diag_video_url', 'tech_pre_repair_video_url', 'tech_post_repair_video_url', 'driver_station_pickup_img', 'driver_tech_dropoff_img', 'driver_tech_pickup_img', 'driver_station_dropoff_img', 'cashier_id', 'revision_status', 'revised_cost', 'handover_video_url'];
+// Add columns if they don't exist (for existing databases)
+const columns = [
+    'diag_video_url', 'tech_pre_repair_video_url', 'tech_post_repair_video_url', 
+    'driver_station_pickup_img', 'driver_tech_dropoff_img', 'driver_tech_pickup_img', 
+    'driver_station_dropoff_img', 'cashier_id', 'revision_status', 'revised_cost', 
+    'handover_video_url', 'pickup_signature_url', 'pickup_selfie_url'
+];
 columns.forEach(col => {
     try { db.exec(`ALTER TABLE orders ADD COLUMN ${col} ${col.includes('cost') || col.includes('id') ? 'INTEGER' : 'TEXT'}`); } catch (e) {}
 });
@@ -206,7 +213,14 @@ app.post('/api/orders', requireAuth, (req, res) => {
 
     const payouts = calculatePayouts(repairCost);
     let signatureUrl = null;
-    if (signatureBase64) signatureUrl = signatureBase64;
+    if (signatureBase64) {
+      const base64Data = signatureBase64.split(',')[1];
+      const fileName = `sig_${Date.now()}.png`;
+      try {
+        fs.writeFileSync(path.join(sigUploadDir, fileName), base64Data, 'base64');
+        signatureUrl = `/uploads/${fileName}`;
+      } catch(e) { console.error("Signature save error:", e); }
+    }
 
     const id = `RLX-${Date.now().toString(36).toUpperCase()}`;
     db.prepare(`
@@ -215,6 +229,7 @@ app.post('/api/orders', requireAuth, (req, res) => {
     `).run({ id, customerName, customerPhone, deviceModel, issue: repairItems, ...payouts, signatureUrl, diagVideoUrl: diagVideoUrl || null, cashierId: req.session.user.id });
 
     logActivity(id, 'ORDER_CREATED', `Order created by ${req.session.user.username}. Est: $${repairCost}. Items: ${repairItems}`, req.session.user.username);
+    if (signatureUrl) logActivity(id, 'MEDIA_UPLOADED', 'Customer signed estimate approval.', req.session.user.username);
     if (diagVideoUrl) logActivity(id, 'MEDIA_UPLOADED', 'Cashier uploaded diagnostic video.', req.session.user.username);
 
     if (process.env.TWILIO_ACCOUNT_SID) {
@@ -284,12 +299,31 @@ app.patch('/api/orders/:id/not-repairable', requireAuth, (req, res) => {
     res.json({ success: true });
 });
 
+// --- CASHIER HANDOVER & PICKUP ROUTE ---
 app.patch('/api/orders/:id/handover', requireAuth, (req, res) => {
-    const { videoUrl } = req.body;
-    if (!videoUrl) return res.status(400).json({ error: "Handover video is required" });
+    const { videoUrl, pickupSignatureBase64, pickupSelfieBase64 } = req.body;
+    if (!videoUrl || !pickupSignatureBase64 || !pickupSelfieBase64) return res.status(400).json({ error: "Missing handover video, signature, or selfie" });
 
-    db.prepare('UPDATE orders SET status = ?, handover_video_url = ? WHERE id = ?').run('COMPLETED', videoUrl, req.params.id);
-    logActivity(req.params.id, 'HANDOVER_COMPLETE', `Cashier recorded handover & payment video. Order COMPLETED.`, req.session.user.username);
+    let pickupSignatureUrl = null;
+    if (pickupSignatureBase64) {
+        const base64Data = pickupSignatureBase64.split(',')[1];
+        const fileName = `pickup_sig_${Date.now()}.png`;
+        fs.writeFileSync(path.join(sigUploadDir, fileName), base64Data, 'base64');
+        pickupSignatureUrl = `/uploads/${fileName}`;
+    }
+
+    let pickupSelfieUrl = null;
+    if (pickupSelfieBase64) {
+        const base64Data = pickupSelfieBase64.split(',')[1];
+        const fileName = `pickup_selfie_${Date.now()}.png`;
+        fs.writeFileSync(path.join(driverUploadDir, fileName), base64Data, 'base64');
+        pickupSelfieUrl = `/uploads/driver/${fileName}`;
+    }
+
+    db.prepare('UPDATE orders SET status = ?, handover_video_url = ?, pickup_signature_url = ?, pickup_selfie_url = ? WHERE id = ?')
+      .run('COMPLETED', videoUrl, pickupSignatureUrl, pickupSelfieUrl, req.params.id);
+    
+    logActivity(req.params.id, 'HANDOVER_COMPLETE', `Cashier recorded handover video, customer signature, and selfie. Order COMPLETED.`, req.session.user.username);
     
     if (process.env.TWILIO_ACCOUNT_SID) {
         const client = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
