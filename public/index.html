@@ -466,24 +466,71 @@
         } catch (err) { alert("Failed to save photo."); }
     }
 
-    function openEvidenceModal(orderId) {
-        const o = orders.find(o => o.id === orderId); if (!o) return;
+
+    async function openEvidenceModal(orderId) {
+        const o = orders.find(o => o.id === orderId);
+        if (!o) return;
+
         document.getElementById('evSubtitle').innerText = `Order: ${o.id} • Customer: ${o.customer_name}`;
+
+        // Fetch Activity Logs
+        let timelineHtml = '<div class="text-gray-500 text-sm p-4">Loading activity...</div>';
+        try {
+            const logRes = await fetch(`/api/orders/${orderId}/logs`);
+            const logs = await logRes.json();
+            if (logs.length > 0) {
+                timelineHtml = '<div class="space-y-4 relative before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-px before:bg-white/10">';
+                logs.forEach(log => {
+                    timelineHtml += `
+                        <div class="flex gap-4 items-start relative pl-6">
+                            <div class="absolute left-0 top-1.5 w-4 h-4 rounded-full border-2 border-[#d4af37] bg-[#08090a] z-10"></div>
+                            <div class="flex-1">
+                                <p class="text-sm text-white font-medium">${sanitize(log.activity_detail)}</p>
+                                <p class="text-xs text-gray-500 mt-0.5">${new Date(log.created_at).toLocaleString()} • By ${sanitize(log.performed_by)}</p>
+                            </div>
+                        </div>
+                    `;
+                });
+                timelineHtml += '</div>';
+            }
+        } catch (e) { timelineHtml = '<p class="text-red-400 text-sm">Error loading logs.</p>'; }
+
         const renderMedia = (url, type) => {
             if (!url) return `<div class="bg-black/30 border border-dashed border-white/10 rounded-xl p-4 text-center text-xs text-gray-600 italic">Not Recorded</div>`;
             if (type === 'video') return `<video src="${url}" controls class="w-full rounded-xl border border-white/10"></video>`;
             if (type === 'img') return `<img src="${url}" class="w-full rounded-xl border border-white/10">`;
         };
-        const html = `
-            <div class="bg-[#d4af37]/10 border border-[#d4af37]/20 rounded-xl p-4 flex justify-between items-center"><div><p class="text-xs text-[#d4af37]">Drop-off</p><p class="text-white font-bold">${new Date(o.created_at).toLocaleString()}</p></div><div class="text-right"><p class="text-xs text-[#d4af37]">Cost</p><p class="text-white font-bold">$${o.repair_cost}</p></div></div>
-            <div><h4 class="text-sm text-gray-400 mb-3">Signature</h4>${renderMedia(o.signature_url, 'img')}</div>
-            <div><h4 class="text-sm text-gray-400 mb-3">Cashier Video</h4>${renderMedia(o.diag_video_url, 'video')}</div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><h4 class="text-sm text-gray-400 mb-3">Tech Pre-Repair</h4>${renderMedia(o.tech_pre_repair_video_url, 'video')}</div><div><h4 class="text-sm text-gray-400 mb-3">Tech Post-Repair</h4>${renderMedia(o.tech_post_repair_video_url, 'video')}</div></div>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4"><div><h4 class="text-sm text-gray-400 mb-3">Drv Station Pick</h4>${renderMedia(o.driver_station_pickup_img, 'img')}</div><div><h4 class="text-sm text-gray-400 mb-3">Drv Tech Drop</h4>${renderMedia(o.driver_tech_dropoff_img, 'img')}</div><div><h4 class="text-sm text-gray-400 mb-3">Drv Tech Pick</h4>${renderMedia(o.driver_tech_pickup_img, 'img')}</div><div><h4 class="text-sm text-gray-400 mb-3">Drv Station Drop</h4>${renderMedia(o.driver_station_dropoff_img, 'img')}</div></div>
-            <div><h4 class="text-sm text-gray-400 mb-3">Cashier Handover & Payment Video</h4>${renderMedia(o.handover_video_url, 'video')}</div>
+
+        const dateStr = new Date(o.created_at).toLocaleString();
+
+        const mediaHtml = `
+            <div class="bg-[#d4af37]/10 border border-[#d4af37]/20 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-center gap-2 mt-6">
+                <div><p class="text-xs uppercase tracking-wider text-[#d4af37]">Drop-off Timestamp</p><p class="text-white font-bold">${dateStr}</p></div>
+                <div class="sm:text-right"><p class="text-xs uppercase tracking-wider text-[#d4af37]">Final Repair Cost</p><p class="text-white font-bold">$${o.repair_cost}</p></div>
+            </div>
+            <div class="mt-6"><h4 class="text-sm uppercase tracking-wider text-gray-400 mb-3">Customer Signature Approval</h4>${renderMedia(o.signature_url, 'img')}</div>
+            <div class="mt-6"><h4 class="text-sm uppercase tracking-wider text-gray-400 mb-3">Cashier Pre-Repair Diagnostic Video</h4>${renderMedia(o.diag_video_url, 'video')}</div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                <div><h4 class="text-sm uppercase tracking-wider text-gray-400 mb-3">Tech: Pre-Repair Video</h4>${renderMedia(o.tech_pre_repair_video_url, 'video')}</div>
+                <div><h4 class="text-sm uppercase tracking-wider text-gray-400 mb-3">Tech: Post-Repair Video</h4>${renderMedia(o.tech_post_repair_video_url, 'video')}</div>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                <div><h4 class="text-sm uppercase tracking-wider text-gray-400 mb-3">Driver: Station Pickup</h4>${renderMedia(o.driver_station_pickup_img, 'img')}</div>
+                <div><h4 class="text-sm uppercase tracking-wider text-gray-400 mb-3">Driver: Tech Dropoff</h4>${renderMedia(o.driver_tech_dropoff_img, 'img')}</div>
+                <div><h4 class="text-sm uppercase tracking-wider text-gray-400 mb-3">Driver: Tech Pickup</h4>${renderMedia(o.driver_tech_pickup_img, 'img')}</div>
+                <div><h4 class="text-sm uppercase tracking-wider text-gray-400 mb-3">Driver: Station Dropoff</h4>${renderMedia(o.driver_station_dropoff_img, 'img')}</div>
+            </div>
+            <div class="mt-6"><h4 class="text-sm uppercase tracking-wider text-gray-400 mb-3">Cashier Handover & Payment Video</h4>${renderMedia(o.handover_video_url, 'video')}</div>
         `;
-        document.getElementById('evContent').innerHTML = html; openModal('evidenceModal');
+
+        document.getElementById('evContent').innerHTML = `
+            <h3 class="text-sm uppercase tracking-wider text-[#d4af37] mb-4">Chronological Audit Trail</h3>
+            ${timelineHtml}
+            ${mediaHtml}
+        `;
+        openModal('evidenceModal');
     }
+    
 
     function getPos(e) { const r = sigCanvas.getBoundingClientRect(); return { x: (e.clientX || e.pageX) - r.left, y: (e.clientY || e.pageY) - r.top }; }
     function startDraw(e) { drawing = true; sigCtx.beginPath(); sigCtx.moveTo(getPos(e).x, getPos(e).y); }
