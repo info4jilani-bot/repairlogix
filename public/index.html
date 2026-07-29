@@ -601,13 +601,28 @@
         const card = (o, txt) => {
             const preVidBtn = o.tech_pre_repair_video_url ? `<span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full border border-emerald-500/20">Pre-Repair ✓</span>` : `<button onclick="openTechVideoModal('${o.id}', 'pre')" class="text-[10px] bg-white/5 hover:bg-white/10 text-white px-2 py-1 rounded-full border border-white/10">Rec Pre-Repair</button>`;
             const postVidBtn = o.tech_post_repair_video_url ? `<span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full border border-emerald-500/20">Post-Repair ✓</span>` : `<button onclick="openTechVideoModal('${o.id}', 'post')" class="text-[10px] bg-white/5 hover:bg-white/10 text-white px-2 py-1 rounded-full border border-white/10">Rec Post-Repair</button>`;
-            const revisionBanner = o.revision_status === 'Pending Customer' ? `<div class="bg-yellow-500/10 text-yellow-400 text-xs px-3 py-2 rounded-lg mt-2 text-center">⏳ Waiting for Customer Approval ($${o.revised_cost})</div>` : '';
-            const reviseBtn = o.status === 'REPAIRING' && o.revision_status !== 'Pending Customer' ? `<button onclick="openReviseModal('${o.id}')" class="text-[10px] bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 px-2 py-1 rounded-full border border-blue-500/20">Revise Estimate</button>` : '';
-            const notRepBtn = o.status === 'REPAIRING' && o.revision_status !== 'Pending Customer' ? `<button onclick="markNotRepairable('${o.id}')" class="text-[10px] bg-red-500/10 text-red-400 hover:bg-red-500/20 px-2 py-1 rounded-full border border-red-500/20">Not Repairable</button>` : '';
-            return `<div class="bg-black/30 border border-white/10 rounded-xl p-4 md:p-5 flex flex-col gap-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><div><h4 class="font-semibold text-white">${sanitize(o.device_model)}</h4><p class="text-sm text-gray-500">${sanitize(o.issue)}</p></div><button onclick="advanceOrder('${o.id}')" class="btn-gold px-4 py-2 rounded-lg text-xs font-medium w-full sm:w-auto text-center" ${o.revision_status === 'Pending Customer' ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>${txt}</button></div><div class="flex flex-wrap gap-2 border-t border-white/5 pt-3">${preVidBtn}${postVidBtn}${reviseBtn}${notRepBtn}</div>${revisionBanner}</div>`;
+            
+            let statusBanner = '';
+            let isDisabled = false;
+            
+            if (o.revision_status === 'Pending Customer') {
+                statusBanner = `<div class="bg-yellow-500/10 text-yellow-400 text-xs px-3 py-2 rounded-lg mt-2 text-center">⏳ Waiting for Customer Approval ($${o.revised_cost})</div>`;
+                isDisabled = true;
+            } else if (o.revision_status === 'Approved') {
+                statusBanner = `<div class="bg-emerald-500/10 text-emerald-400 text-sm font-bold px-3 py-2 rounded-lg mt-2 text-center">✅ CUSTOMER APPROVED REVISION ($${o.repair_cost}). Proceed with repair.</div>`;
+            } else if (o.revision_status === 'Rejected') {
+                statusBanner = `<div class="bg-red-500/10 text-red-400 text-sm font-bold px-3 py-2 rounded-lg mt-2 text-center">❌ CUSTOMER REJECTED REVISION. Do NOT repair. Return to Driver.</div>`;
+                isDisabled = true;
+            }
+
+            const reviseBtn = o.status === 'REPAIRING' && o.revision_status === 'None' ? `<button onclick="openReviseModal('${o.id}')" class="text-[10px] bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 px-2 py-1 rounded-full border border-blue-500/20">Revise Estimate</button>` : '';
+            const notRepBtn = o.status === 'REPAIRING' && o.revision_status === 'None' ? `<button onclick="markNotRepairable('${o.id}')" class="text-[10px] bg-red-500/10 text-red-400 hover:bg-red-500/20 px-2 py-1 rounded-full border border-red-500/20">Not Repairable</button>` : '';
+
+            return `<div class="bg-black/30 border border-white/10 rounded-xl p-4 md:p-5 flex flex-col gap-4"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><div><h4 class="font-semibold text-white">${sanitize(o.device_model)}</h4><p class="text-sm text-gray-500">${sanitize(o.issue)}</p></div><button onclick="advanceOrder('${o.id}')" class="btn-gold px-4 py-2 rounded-lg text-xs font-medium w-full sm:w-auto text-center" ${isDisabled ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>${txt}</button></div><div class="flex flex-wrap gap-2 border-t border-white/5 pt-3">${preVidBtn}${postVidBtn}${reviseBtn}${notRepBtn}</div>${statusBanner}</div>`;
         };
         return `<div class="mb-6 md:mb-10"><h2 class="text-3xl md:text-4xl font-bold mb-2">Repair Queue</h2></div><div class="grid grid-cols-1 lg:grid-cols-2 gap-6"><div><h3 class="text-sm uppercase tracking-wider text-gray-400 mb-4">Incoming</h3><div class="space-y-3">${inc.map(o => card(o, 'Start Repair')).join('') || '<p class="text-gray-600 text-sm italic">Empty.</p>'}</div></div><div><h3 class="text-sm uppercase tracking-wider text-gray-400 mb-4">Repairing</h3><div class="space-y-3">${rep.map(o => card(o, 'Mark Repaired')).join('') || '<p class="text-gray-600 text-sm italic">Empty.</p>'}</div></div></div>${renderTrackingTable(orders.filter(o => !['AT_TECH', 'REPAIRING'].includes(o.status)), 'tech')}`;
     }
+    
 </script>
 </body>
 </html>
