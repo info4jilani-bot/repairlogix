@@ -15,12 +15,11 @@ app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '15mb' }));
 app.use(express.static('public'));
 
-// Session Middleware (Keeps users logged in)
 app.use(session({
-    secret: 'repairlogix-super-secret-key-2026',
+    secret: process.env.SESSION_SECRET || 'repairlogix-super-secret-key-2026',
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 24 * 60 * 60 * 1000 } // 24 hours
+    cookie: { maxAge: 24 * 60 * 60 * 1000 }
 }));
 
 // Ensure upload directories exist
@@ -65,21 +64,24 @@ db.exec(`
     driver_tech_pickup_img TEXT,
     driver_station_dropoff_img TEXT,
     cashier_id INTEGER,
+    revision_status TEXT DEFAULT 'None',
+    revised_cost INTEGER,
+    handover_video_url TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
 `);
 
 // Add columns if they don't exist
-try { db.exec(`ALTER TABLE orders ADD COLUMN diag_video_url TEXT`); } catch (e) {}
-try { db.exec(`ALTER TABLE orders ADD COLUMN tech_pre_repair_video_url TEXT`); } catch (e) {}
-try { db.exec(`ALTER TABLE orders ADD COLUMN tech_post_repair_video_url TEXT`); } catch (e) {}
-try { db.exec(`ALTER TABLE orders ADD COLUMN driver_station_pickup_img TEXT`); } catch (e) {}
-try { db.exec(`ALTER TABLE orders ADD COLUMN driver_tech_dropoff_img TEXT`); } catch (e) {}
-try { db.exec(`ALTER TABLE orders ADD COLUMN driver_tech_pickup_img TEXT`); } catch (e) {}
-try { db.exec(`ALTER TABLE orders ADD COLUMN driver_station_dropoff_img TEXT`); } catch (e) {}
-try { db.exec(`ALTER TABLE orders ADD COLUMN cashier_id INTEGER`); } catch (e) {}
+const columns = [
+    'diag_video_url', 'tech_pre_repair_video_url', 'tech_post_repair_video_url', 
+    'driver_station_pickup_img', 'driver_tech_dropoff_img', 'driver_tech_pickup_img', 
+    'driver_station_dropoff_img', 'cashier_id', 'revision_status', 'revised_cost', 'handover_video_url'
+];
+columns.forEach(col => {
+    try { db.exec(`ALTER TABLE orders ADD COLUMN ${col} ${col.includes('cost') || col.includes('id') ? 'INTEGER' : 'TEXT'}`); } catch (e) {}
+});
 
-// --- SEED DEFAULT USERS ---
+// Seed Default Users
 (async () => {
     const users = [
         { username: 'owner', password: 'owner123', role: 'owner' },
@@ -103,13 +105,10 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// --- AUTH MIDDLEWARE ---
+// Auth Middleware
 const requireAuth = (req, res, next) => {
-    if (req.session && req.session.user) {
-        next();
-    } else {
-        res.status(401).json({ error: "Unauthorized. Please login." });
-    }
+    if (req.session && req.session.user) next();
+    else res.status(401).json({ error: "Unauthorized. Please login." });
 };
 
 // --- AUTH ROUTES ---
@@ -117,25 +116,19 @@ app.post('/api/auth/login', async (req, res) => {
     const { username, password } = req.body;
     const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username);
     if (!user) return res.status(401).json({ error: "Invalid username or password" });
-
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ error: "Invalid username or password" });
-
     req.session.user = { id: user.id, username: user.username, role: user.role };
     res.json({ success: true, user: req.session.user });
 });
 
-app.post('/api/auth/logout', (req, res) => {
-    req.session.destroy();
-    res.json({ success: true });
-});
-
+app.post('/api/auth/logout', (req, res) => { req.session.destroy(); res.json({ success: true }); });
 app.get('/api/auth/me', (req, res) => {
     if (req.session.user) res.json({ user: req.session.user });
     else res.status(401).json({ error: "Not logged in" });
 });
 
-// --- FINANCIAL RULES ENGINE ---
+// Financial Rules Engine
 function calculatePayouts(cost) {
   const repairCost = parseInt(cost);
   const stationCut = repairCost >= 100 ? 10 : 0;
@@ -144,9 +137,8 @@ function calculatePayouts(cost) {
   const techCut = Math.round(repairCost * 0.75);
   const totalPayouts = stationCut + cashierCut + driverCut + techCut;
   let businessCut = repairCost - totalPayouts;
-  let isProfitable = true;
-  if (businessCut < 0) { businessCut = 0; isProfitable = false; }
-  return { repairCost, stationCut, cashierCut, driverCut, techCut, businessCut, isProfitable };
+  if (businessCut < 0) businessCut = 0;
+  return { repairCost, stationCut, cashierCut, driverCut, techCut, businessCut };
 }
 
 // --- PROTECTED API ROUTES ---
@@ -190,8 +182,9 @@ app.get('/api/orders', requireAuth, (req, res) => {
 
 app.post('/api/orders', requireAuth, (req, res) => {
   try {
-    const { customerName, customerPhone, deviceModel, issue, repairCost, signatureBase64, diagVideoUrl } = req.body;
-    if (!customerName || !customerPhone || !deviceModel || !issue || !repairCost) return res.status(400).json({ error: "Missing fields" });
+    // repairItems is now a comma-separated string of multiple repairs
+    const { customerName, customerPhone, deviceModel, repairItems, repairCost, signatureBase64, diagVideoUrl } = req.body;
+    if (!customerName || !customerPhone || !deviceModel || !repairItems || !repairCost) return res.status(400).json({ error: "Missing fields" });
 
     const payouts = calculatePayouts(repairCost);
     let signatureUrl = null;
@@ -201,13 +194,13 @@ app.post('/api/orders', requireAuth, (req, res) => {
     db.prepare(`
       INSERT INTO orders (id, customer_name, customer_phone, device_model, issue, repair_cost, station_cut, cashier_cut, driver_cut, tech_cut, business_cut, signature_url, diag_video_url, cashier_id)
       VALUES (@id, @customerName, @customerPhone, @deviceModel, @issue, @repairCost, @stationCut, @cashierCut, @driverCut, @techCut, @businessCut, @signatureUrl, @diagVideoUrl, @cashierId)
-    `).run({ id, customerName, customerPhone, deviceModel, issue, ...payouts, signatureUrl, diagVideoUrl: diagVideoUrl || null, cashierId: req.session.user.id });
+    `).run({ id, customerName, customerPhone, deviceModel, issue: repairItems, ...payouts, signatureUrl, diagVideoUrl: diagVideoUrl || null, cashierId: req.session.user.id });
 
     if (process.env.TWILIO_ACCOUNT_SID) {
       try {
         const client = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
         client.messages.create({
-          body: `RepairLogix: We've received your ${deviceModel}. Estimate approved ($${repairCost}).`,
+          body: `RepairLogix: We've received your ${deviceModel} for: ${repairItems}. Estimate: $${repairCost}.`,
           from: process.env.TWILIO_PHONE_NUMBER, to: customerPhone
         }).catch(err => console.error("Twilio Error:", err.message));
       } catch (err) {}
@@ -216,6 +209,79 @@ app.post('/api/orders', requireAuth, (req, res) => {
   } catch (error) { res.status(500).json({ error: "Server Error" }); }
 });
 
+// --- PHASE 2: TECH REVISION & APPROVAL ROUTES ---
+
+// Tech sends revised estimate to customer
+app.patch('/api/orders/:id/revise', requireAuth, (req, res) => {
+    const { revisedCost, revisedNotes } = req.body;
+    if (!revisedCost || !revisedNotes) return res.status(400).json({ error: "Missing cost or notes" });
+    
+    db.prepare('UPDATE orders SET revision_status = ?, revised_cost = ?, issue = ? WHERE id = ?')
+      .run('Pending Customer', revisedCost, revisedNotes, req.params.id);
+
+    if (process.env.TWILIO_ACCOUNT_SID) {
+        const client = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+        const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
+        client.messages.create({
+            body: `RepairLogix: Tech recommends a revised estimate of $${revisedCost} for your ${order.device_model}. Reason: ${revisedNotes}. Please click here to approve: https://repairlogix.onrender.com/?track=${order.id}&review=1`,
+            from: process.env.TWILIO_PHONE_NUMBER, to: order.customer_phone
+        }).catch(() => {});
+    }
+    res.json({ success: true });
+});
+
+// Public route for customer to approve/reject revision
+app.patch('/api/public/revise/:id/:action', (req, res) => {
+    const { id, action } = req.params;
+    const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(id);
+    if (!order || order.revision_status !== 'Pending Customer') return res.status(400).json({ error: "Invalid request" });
+
+    if (action === 'approve') {
+        const newPayouts = calculatePayouts(order.revised_cost);
+        db.prepare('UPDATE orders SET revision_status = ?, repair_cost = ?, station_cut = ?, cashier_cut = ?, driver_cut = ?, tech_cut = ?, business_cut = ? WHERE id = ?')
+          .run('Approved', newPayouts.repairCost, newPayouts.stationCut, newPayouts.cashierCut, newPayouts.driverCut, newPayouts.techCut, newPayouts.businessCut, id);
+    } else {
+        db.prepare('UPDATE orders SET revision_status = ? WHERE id = ?').run('Rejected', id);
+    }
+    res.json({ success: true });
+});
+
+// Tech marks as Not Repairable
+app.patch('/api/orders/:id/not-repairable', requireAuth, (req, res) => {
+    db.prepare('UPDATE orders SET status = ?, revision_status = ? WHERE id = ?').run('DRIVER_TO_STATION', 'Not Repairable', req.params.id);
+    
+    if (process.env.TWILIO_ACCOUNT_SID) {
+        const client = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+        const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
+        client.messages.create({
+            body: `RepairLogix: Unfortunately, your ${order.device_model} is not repairable. The driver is returning it to the gas station. No charge applied.`,
+            from: process.env.TWILIO_PHONE_NUMBER, to: order.customer_phone
+        }).catch(() => {});
+    }
+    res.json({ success: true });
+});
+
+// --- PHASE 2: CASHIER HANDOVER VIDEO ROUTE ---
+
+// Cashier completes order WITH handover video
+app.patch('/api/orders/:id/handover', requireAuth, (req, res) => {
+    const { videoUrl } = req.body;
+    if (!videoUrl) return res.status(400).json({ error: "Handover video is required" });
+
+    db.prepare('UPDATE orders SET status = ?, handover_video_url = ? WHERE id = ?').run('COMPLETED', videoUrl, req.params.id);
+    
+    if (process.env.TWILIO_ACCOUNT_SID) {
+        const client = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+        const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
+        client.messages.create({
+            body: `RepairLogix: Payment received. Thank you for your business!`,
+            from: process.env.TWILIO_PHONE_NUMBER, to: order.customer_phone
+        }).catch(() => {});
+    }
+    res.json({ success: true });
+});
+
+// Advance Workflow Status
 app.patch('/api/orders/:id/advance', requireAuth, (req, res) => {
   try {
     const workflow = ['DROPPED_AT_STATION', 'DRIVER_TO_TECH', 'AT_TECH', 'REPAIRING', 'REPAIR_DONE', 'DRIVER_TO_STATION', 'READY_FOR_CUSTOMER', 'COMPLETED'];
@@ -239,15 +305,14 @@ app.patch('/api/orders/:id/advance', requireAuth, (req, res) => {
     res.json({ success: true, newStatus: order.status });
   } catch (error) { res.status(500).json({ error: "Failed" }); }
 });
-// --- PUBLIC TRACKING API (No Login Required) ---
+
+// --- PUBLIC TRACKING API ---
 app.get('/api/track/:id', (req, res) => {
   try {
-    // Only return safe, public data (no financials or internal IDs)
-    const order = db.prepare('SELECT id, customer_name, device_model, status, created_at FROM orders WHERE id = ?').get(req.params.id.toUpperCase());
+    const order = db.prepare('SELECT id, customer_name, device_model, status, revision_status, revised_cost, repair_cost, issue, created_at FROM orders WHERE id = ?').get(req.params.id.toUpperCase());
     if (!order) return res.status(404).json({ error: "Invalid tracking code." });
     res.json({ success: true, order });
-  } catch (err) {
-    res.status(500).json({ error: "Server error" });
-  }
+  } catch (err) { res.status(500).json({ error: "Server error" }); }
 });
-app.listen(PORT, () => console.log(`RepairLogix running on port ${PORT}`));
+
+app.listen(PORT, () => console.log(`RepairLogix Phase 2 running on port ${PORT}`));
